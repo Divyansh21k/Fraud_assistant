@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FraudGuard — Intelligent Fraud Detection</title>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #0d0d0d;
+            --surface: #141414;
+            --surface2: #1a1a1a;
+            --border: #2a2a2a;
+            --border2: #333;
+            --orange: #ff6600;
+            --orange-dim: rgba(255,102,0,0.08);
+            --orange-glow: rgba(255,102,0,0.2);
+            --green: #00cc44;
+            --red: #cc2200;
+            --yellow: #ffcc00;
+            --text: #e0e0e0;
+            --text-dim: #666;
+            --text-muted: #333;
+            --mono: 'IBM Plex Mono', monospace;
+            --sans: 'IBM Plex Sans', sans-serif;
+        }
+        body { background:var(--bg); color:var(--text); font-family:var(--mono); height:100vh; display:flex; flex-direction:column; overflow:hidden; font-size:13px; }
+        .topbar { background:var(--surface); border-bottom:1px solid var(--orange); padding:0 20px; display:flex; align-items:center; justify-content:space-between; height:44px; flex-shrink:0; }
+        .topbar-left { display:flex; align-items:center; gap:20px; }
+        .brand { display:flex; align-items:center; gap:10px; }
+        .brand-name { font-family:var(--sans); font-weight:600; font-size:15px; letter-spacing:0.5px; color:var(--orange); }
+        .brand-divider { width:1px; height:20px; background:var(--border2); }
+        .brand-sub { font-size:10px; color:var(--text-dim); letter-spacing:2px; text-transform:uppercase; }
+        .topbar-nav { display:flex; height:44px; }
+        .nav-item { padding:0 16px; display:flex; align-items:center; font-size:11px; letter-spacing:1px; text-transform:uppercase; color:var(--text-dim); cursor:pointer; border-right:1px solid var(--border); transition:all 0.15s; user-select:none; }
+        .nav-item:hover { color:var(--orange); background:var(--orange-dim); }
+        .nav-item.active { color:var(--orange); background:var(--orange-dim); border-bottom:2px solid var(--orange); }
+        .topbar-right { display:flex; align-items:center; gap:16px; }
+        .status-dot { width:6px; height:6px; border-radius:50%; background:var(--green); box-shadow:0 0 6px var(--green); animation:blink 2s ease infinite; }
+        .status-text { font-size:10px; color:var(--text-dim); letter-spacing:1px; }
+        .time-display { font-size:11px; color:var(--text-dim); }
+        .layout { flex:1; display:flex; overflow:hidden; }
+        .sidebar { width:220px; background:var(--surface); border-right:1px solid var(--border); display:flex; flex-direction:column; flex-shrink:0; }
+        .sidebar-header { padding:12px 16px; border-bottom:1px solid var(--border); font-size:9px; letter-spacing:2px; text-transform:uppercase; color:var(--text-dim); }
+        .sidebar-section { padding:12px 0; border-bottom:1px solid var(--border); }
+        .sidebar-label { padding:0 16px 8px; font-size:9px; letter-spacing:2px; text-transform:uppercase; color:var(--text-muted); }
+        .feature-btn { width:100%; background:none; border:none; color:var(--text-dim); font-family:var(--mono); font-size:11px; padding:8px 16px; text-align:left; cursor:pointer; display:flex; align-items:center; gap:10px; transition:all 0.15s; letter-spacing:0.3px; }
+        .feature-btn:hover { color:var(--orange); background:var(--orange-dim); }
+        .feature-btn .btn-key { font-size:9px; color:var(--text-muted); border:1px solid var(--text-muted); padding:1px 5px; border-radius:3px; margin-left:auto; }
+        .feature-btn:hover .btn-key { color:var(--orange); border-color:var(--orange); }
+        .risk-panel { margin-top:auto; border-top:1px solid var(--border); }
+        .risk-panel-header { padding:10px 16px; font-size:9px; letter-spacing:2px; text-transform:uppercase; color:var(--text-dim); border-bottom:1px solid var(--border); }
+        .risk-display { padding:16px; display:none; }
+        .risk-display.visible { display:block; }
+        .risk-score { font-family:var(--sans); font-weight:600; font-size:36px; line-height:1; margin-bottom:4px; }
+        .risk-score.low { color:var(--green); }
+        .risk-score.medium { color:var(--yellow); }
+        .risk-score.high, .risk-score.critical { color:var(--red); }
+        .risk-verdict { font-size:10px; letter-spacing:2px; text-transform:uppercase; margin-bottom:12px; }
+        .risk-bar-track { height:2px; background:var(--border2); margin-bottom:12px; }
+        .risk-bar-fill { height:100%; transition:width 0.6s ease; }
+        .risk-bar-fill.low { background:var(--green); }
+        .risk-bar-fill.medium { background:var(--yellow); }
+        .risk-bar-fill.high, .risk-bar-fill.critical { background:var(--red); }
+        .risk-flag-list { display:flex; flex-direction:column; gap:4px; }
+        .risk-flag-item { font-size:10px; color:var(--text-dim); display:flex; gap:6px; align-items:flex-start; }
+        .risk-flag-item::before { content:'!'; color:var(--red); font-weight:600; flex-shrink:0; }
+        .no-analysis { padding:16px; font-size:10px; color:var(--text-muted); line-height:1.6; }
+        .chat-panel { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+        .chat-header { padding:10px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; background:var(--surface); flex-shrink:0; }
+        .chat-title { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--text-dim); }
+        .chat-controls { display:flex; gap:8px; }
+        .ctrl-btn { background:none; border:1px solid var(--border); color:var(--text-dim); font-family:var(--mono); font-size:10px; padding:4px 10px; cursor:pointer; letter-spacing:1px; transition:all 0.15s; }
+        .ctrl-btn:hover { border-color:var(--orange); color:var(--orange); background:var(--orange-dim); }
+        .messages { flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:0; }
+        .messages::-webkit-scrollbar { width:3px; }
+        .messages::-webkit-scrollbar-thumb { background:var(--border2); }
+        .welcome { display:flex; flex-direction:column; justify-content:center; height:100%; padding:20px; opacity:0; animation:fadeIn 0.5s ease forwards 0.2s; }
+        .welcome-tag { font-size:9px; letter-spacing:3px; text-transform:uppercase; color:var(--orange); margin-bottom:16px; }
+        .welcome-title { font-family:var(--sans); font-size:28px; font-weight:300; line-height:1.3; margin-bottom:16px; }
+        .welcome-title strong { font-weight:600; color:var(--orange); }
+        .welcome-desc { font-size:12px; color:var(--text-dim); line-height:1.8; max-width:560px; margin-bottom:24px; font-family:var(--sans); }
+        .welcome-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:1px; background:var(--border); border:1px solid var(--border); max-width:560px; }
+        .welcome-card { background:var(--surface); padding:14px 16px; }
+        .welcome-card-title { font-size:11px; color:var(--orange); margin-bottom:4px; }
+        .welcome-card-desc { font-size:10px; color:var(--text-dim); line-height:1.6; font-family:var(--sans); }
+        .message { display:flex; flex-direction:column; margin-bottom:12px; opacity:0; animation:slideIn 0.2s ease forwards; }
+        .message-role { font-size:9px; letter-spacing:2px; text-transform:uppercase; margin-bottom:4px; padding:0 4px; }
+        .message.user .message-role { color:var(--text-dim); }
+        .message.assistant .message-role { color:var(--orange); }
+        .message-time-small { font-size:9px; color:var(--text-muted); margin-top:4px; padding:0 4px; }
+        .message-body { padding:12px 16px; line-height:1.7; font-size:13px; white-space:pre-wrap; border-radius:4px; }
+        .message.user .message-body { background:var(--surface2); border:1px solid var(--border2); color:var(--text-dim); }
+        .message.assistant .message-body { background:transparent; border-left:2px solid var(--orange); padding-left:16px; color:var(--text); }
+        .typing-indicator { display:flex; margin-bottom:1px; }
+        .typing-prefix { width:120px; flex-shrink:0; padding:12px 14px 12px 0; text-align:right; font-size:10px; letter-spacing:1px; color:var(--orange); text-transform:uppercase; }
+        .typing-body { flex:1; padding:12px 16px; border-left:2px solid var(--orange); display:flex; align-items:center; gap:4px; }
+        .typing-dot { width:4px; height:4px; border-radius:50%; background:var(--orange); animation:blink 1.2s ease infinite; }
+        .typing-dot:nth-child(2) { animation-delay:0.2s; }
+        .typing-dot:nth-child(3) { animation-delay:0.4s; }
+        .input-section { border-top:1px solid var(--border); background:var(--surface); flex-shrink:0; }
+        .image-preview-bar { display:none; padding:8px 20px; border-bottom:1px solid var(--border); align-items:center; gap:10px; background:var(--orange-dim); }
+        .image-preview-bar.visible { display:flex; }
+        .image-preview-bar img { height:40px; border:1px solid var(--orange); }
+        .image-preview-bar span { font-size:10px; color:var(--orange); letter-spacing:1px; }
+        .remove-img-btn { background:none; border:1px solid var(--border2); color:var(--text-dim); font-size:10px; padding:2px 8px; cursor:pointer; font-family:var(--mono); margin-left:auto; transition:all 0.15s; }
+        .remove-img-btn:hover { border-color:var(--red); color:var(--red); }
+        .input-row { display:flex; align-items:flex-end; }
+        .input-label { padding:14px 16px; font-size:10px; color:var(--orange); letter-spacing:1px; text-transform:uppercase; flex-shrink:0; border-right:1px solid var(--border); align-self:stretch; display:flex; align-items:center; }
+        #messageInput { flex:1; background:none; border:none; color:var(--text); font-family:var(--mono); font-size:13px; padding:14px 16px; resize:none; outline:none; min-height:48px; max-height:120px; line-height:1.5; }
+        #messageInput::placeholder { color:var(--text-muted); }
+        .input-controls { display:flex; align-items:center; padding:0 12px; border-left:1px solid var(--border); align-self:stretch; }
+        .input-ctrl-btn { background:none; border:none; color:var(--text-dim); font-size:14px; cursor:pointer; padding:8px; transition:color 0.15s; }
+        .input-ctrl-btn:hover { color:var(--orange); }
+        .submit-btn { background:var(--orange); border:none; color:var(--bg); font-family:var(--mono); font-size:11px; font-weight:600; letter-spacing:2px; padding:0 20px; cursor:pointer; align-self:stretch; transition:all 0.15s; text-transform:uppercase; }
+        .submit-btn:hover { background:#ff8833; }
+        .submit-btn:disabled { opacity:0.3; cursor:not-allowed; }
+        .input-footer { padding:6px 16px 10px; font-size:9px; color:var(--text-muted); letter-spacing:0.5px; }
+        @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes slideIn { from{opacity:0} to{opacity:1} }
+        @keyframes blink { 0%,60%,100%{opacity:0.3} 30%{opacity:1} }
+    </style>
+</head>
+<body>
+<div class="topbar">
+    <div class="topbar-left">
+        <div class="brand">
+            <div class="brand-name">FRAUDGUARD</div>
+            <div class="brand-divider"></div>
+            <div class="brand-sub">Intelligent Fraud Detection System</div>
+        </div>
+        <div class="topbar-nav">
+            <div class="nav-item active">Analysis</div>
+            <div class="nav-item">History</div>
+            <div class="nav-item">Reports</div>
+        </div>
+    </div>
+    <div class="topbar-right">
+        <div class="status-dot"></div>
+        <div class="status-text">MODEL ACTIVE</div>
+        <div class="brand-divider"></div>
+        <div class="time-display" id="clock">--:--:--</div>
+    </div>
+</div>
+<div class="layout">
+    <div class="sidebar">
+        <div class="sidebar-header">Functions</div>
+        <div class="sidebar-section">
+            <div class="sidebar-label">Features</div>
+            <button class="feature-btn" onclick="setMode('transaction')">▸ Transaction Analysis<span class="btn-key">F1</span></button>
+            <button class="feature-btn" onclick="setMode('education')">▸ Fraud Education<span class="btn-key">F2</span></button>
+            <button class="feature-btn" onclick="setMode('prevention')">▸ Prevention Advice<span class="btn-key">F3</span></button>
+            <button class="feature-btn" onclick="setMode('report')">▸ Risk Report<span class="btn-key">F4</span></button>
+        </div>
+        <div class="sidebar-section">
+            <div class="sidebar-label">Actions</div>
+            <button class="feature-btn" onclick="document.getElementById('imageInput').click()">▸ Upload Screenshot</button>
+            <button class="feature-btn" onclick="clearChat()">▸ Clear Session</button>
+        </div>
+        <div class="risk-panel">
+            <div class="risk-panel-header">Last Result</div>
+            <div class="risk-display" id="riskDisplay">
+                <div class="risk-score" id="riskScore">--</div>
+                <div class="risk-verdict" id="riskVerdict">--</div>
+                <div class="risk-bar-track"><div class="risk-bar-fill" id="riskBarFill" style="width:0%"></div></div>
+                <div class="risk-flag-list" id="riskFlagList"></div>
+            </div>
+            <div class="no-analysis" id="noAnalysis">No transaction analysed yet. Describe a payment or upload a screenshot.</div>
+        </div>
+    </div>
+    <div class="chat-panel">
+        <div class="chat-header">
+            <div class="chat-title">Analysis Terminal</div>
+            <div class="chat-controls">
+                <button class="ctrl-btn" onclick="clearChat()">CLR</button>
+                <button class="ctrl-btn" onclick="exportChat()">EXP</button>
+            </div>
+        </div>
+        <div class="messages" id="messages">
+            <div class="welcome" id="welcome">
+                <div class="welcome-tag">FraudGuard v1.0 — Ready</div>
+                <div class="welcome-title">Describe a transaction.<br><strong>Get an instant fraud assessment.</strong></div>
+                <div class="welcome-desc">Powered by an XGBoost model trained on 590,540 real transactions. Describe any payment in plain English, upload a screenshot, or ask about fraud prevention.</div>
+                <div class="welcome-grid">
+                    <div class="welcome-card"><div class="welcome-card-title">Transaction Analysis</div><div class="welcome-card-desc">Score any transaction with fraud probability and confidence level</div></div>
+                    <div class="welcome-card"><div class="welcome-card-title">CNP & ATO Detection</div><div class="welcome-card-desc">Classify fraud type based on detected behavioral patterns</div></div>
+                    <div class="welcome-card"><div class="welcome-card-title">Screenshot Upload</div><div class="welcome-card-desc">Upload a payment notification and get instant analysis</div></div>
+                    <div class="welcome-card"><div class="welcome-card-title">Prevention Advice</div><div class="welcome-card-desc">Specific steps to take based on the fraud type detected</div></div>
+                </div>
+            </div>
+        </div>
+        <div class="input-section">
+            <div class="image-preview-bar" id="imagePreviewBar">
+                <img id="previewImg" src="" alt="">
+                <span>IMAGE READY FOR ANALYSIS</span>
+                <button class="remove-img-btn" onclick="removeImage()">REMOVE</button>
+            </div>
+            <div class="input-row">
+                <div class="input-label" id="inputLabel">INPUT</div>
+                <textarea id="messageInput" placeholder="Describe a transaction or ask about fraud..." rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+                <div class="input-controls">
+                    <button class="input-ctrl-btn" onclick="document.getElementById('imageInput').click()" title="Upload screenshot">📎</button>
+                    <input type="file" id="imageInput" accept="image/*" style="display:none" onchange="handleImage(event)">
+                </div>
+                <button class="submit-btn" id="sendBtn" onclick="send()">SEND</button>
+            </div>
+            <div class="input-footer">ENTER to send · SHIFT+ENTER for new line · F1–F4 to switch mode · 📎 to upload screenshot</div>
+        </div>
+    </div>
+</div>
+<script>
+    let currentImage = null;
+    let currentMode = 'transaction';
+    const modeLabels = { transaction:'ANALYSE', education:'LEARN', prevention:'PREVENT', report:'REPORT' };
+    const modePlaceholders = { transaction:'Describe a transaction to analyse...', education:'Ask anything about fraud, scams, or financial security...', prevention:'Describe a situation to get prevention advice...', report:'Describe a transaction to generate a risk report...' };
+
+    function updateClock() { document.getElementById('clock').textContent = new Date().toTimeString().split(' ')[0]; }
+    setInterval(updateClock, 1000); updateClock();
+
+    document.addEventListener('keydown', e => {
+        if (e.key==='F1'){e.preventDefault();setMode('transaction');}
+        if (e.key==='F2'){e.preventDefault();setMode('education');}
+        if (e.key==='F3'){e.preventDefault();setMode('prevention');}
+        if (e.key==='F4'){e.preventDefault();setMode('report');}
+    });
+
+    const modeStarters = {
+    transaction: 'Analyse this transaction: ',
+    education: 'Explain to me: ',
+    prevention: 'How can I protect myself from: ',
+    report: 'Generate a risk report for: '
+};
+
+function setMode(mode) {
+    currentMode = mode;
+    document.getElementById('inputLabel').textContent = modeLabels[mode];
+    document.getElementById('messageInput').placeholder = modePlaceholders[mode];
+    document.getElementById('messageInput').value = modeStarters[mode];
+    autoResize(document.getElementById('messageInput'));
+    document.getElementById('messageInput').focus();
+}
+    function autoResize(el) { el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,120)+'px'; }
+    function handleKey(e) { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();} }
+    function handleImage(e) { const file=e.target.files[0]; if(!file) return; const r=new FileReader(); r.onload=ev=>{currentImage=ev.target.result;document.getElementById('previewImg').src=currentImage;document.getElementById('imagePreviewBar').classList.add('visible');}; r.readAsDataURL(file); }
+    function removeImage() { currentImage=null; document.getElementById('imagePreviewBar').classList.remove('visible'); document.getElementById('imageInput').value=''; }
+    function getTime() { return new Date().toTimeString().split(' ')[0]; }
+
+    function addMessage(role, content) {
+        const welcome=document.getElementById('welcome'); if(welcome) welcome.remove();
+        const messages=document.getElementById('messages');
+        const div=document.createElement('div'); div.className=`message ${role}`;
+        div.innerHTML=`<div class="message-prefix"><div class="message-role">${role==='assistant'?'FRAUDGUARD':'YOU'}</div><div class="message-time-small">${getTime()}</div></div><div class="message-body">${content}</div>`;
+        messages.appendChild(div); messages.scrollTop=messages.scrollHeight;
+    }
+
+    function showTyping() { const m=document.getElementById('messages'); const d=document.createElement('div'); d.className='typing-indicator'; d.id='typing'; d.innerHTML='<div class="typing-prefix">Processing</div><div class="typing-body"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>'; m.appendChild(d); m.scrollTop=m.scrollHeight; }
+    function removeTyping() { const t=document.getElementById('typing'); if(t) t.remove(); }
+
+    function updateRiskPanel(data) {
+        if(!data) return;
+        document.getElementById('noAnalysis').style.display='none';
+        document.getElementById('riskDisplay').classList.add('visible');
+        const level=data.risk_level.toLowerCase();
+        const score=document.getElementById('riskScore'); score.textContent=data.probability+'%'; score.className=`risk-score ${level}`;
+        document.getElementById('riskVerdict').textContent=data.verdict+' — '+data.risk_level;
+        const bar=document.getElementById('riskBarFill'); bar.style.width=data.probability+'%'; bar.className=`risk-bar-fill ${level}`;
+        const fl=document.getElementById('riskFlagList'); fl.innerHTML='';
+        (data.flags||[]).forEach(f=>{const d=document.createElement('div');d.className='risk-flag-item';d.textContent=f;fl.appendChild(d);});
+    }
+
+    function clearChat() { document.getElementById('messages').innerHTML=''; fetch('/clear',{method:'POST'}); }
+
+    function exportChat() {
+        const msgs=document.querySelectorAll('.message'); let text='FRAUDGUARD SESSION EXPORT\n'+new Date().toISOString()+'\n\n';
+        msgs.forEach(m=>{const r=m.querySelector('.message-role').textContent;const b=m.querySelector('.message-body').textContent;const t=m.querySelector('.message-time-small').textContent;text+=`[${t}] ${r}:\n${b}\n\n`;});
+        const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([text],{type:'text/plain'})); a.download='fraudguard-session.txt'; a.click();
+    }
+
+    async function send() {
+        const input=document.getElementById('messageInput'); const sendBtn=document.getElementById('sendBtn');
+        const message=input.value.trim(); if(!message&&!currentImage) return;
+        addMessage('user', message||'[Screenshot uploaded for analysis]');
+        input.value=''; input.style.height='auto'; sendBtn.disabled=true;
+        const imgToSend=currentImage; removeImage(); showTyping();
+        try {
+            const res=await fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message,image:imgToSend,mode:currentMode})});
+            const data=await res.json(); removeTyping(); addMessage('assistant',data.message);
+            if(data.fraud_data) updateRiskPanel(data.fraud_data);
+        } catch(err) { removeTyping(); addMessage('assistant','Connection error. Please try again.'); }
+        sendBtn.disabled=false; input.focus();
+    }
+</script>
+</body>
+</html>
