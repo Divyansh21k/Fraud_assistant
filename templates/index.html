@@ -40,7 +40,7 @@
         .status-dot { width:6px; height:6px; border-radius:50%; background:var(--green); box-shadow:0 0 6px var(--green); animation:blink 2s ease infinite; }
         .status-text { font-size:10px; color:var(--text-dim); letter-spacing:1px; }
         .time-display { font-size:11px; color:var(--text-dim); }
-        .layout { flex:1; display:flex; overflow:hidden; }
+        .layout { flex:1; display:flex; overflow:hidden; position:relative; }
         .sidebar { width:220px; background:var(--surface); border-right:1px solid var(--border); display:flex; flex-direction:column; flex-shrink:0; }
         .sidebar-header { padding:12px 16px; border-bottom:1px solid var(--border); font-size:9px; letter-spacing:2px; text-transform:uppercase; color:var(--text-dim); }
         .sidebar-section { padding:12px 0; border-bottom:1px solid var(--border); }
@@ -117,6 +117,63 @@
         .submit-btn:hover { background:#ff8833; }
         .submit-btn:disabled { opacity:0.3; cursor:not-allowed; }
         .input-footer { padding:6px 16px 10px; font-size:9px; color:var(--text-muted); letter-spacing:0.5px; }
+
+        /* OVERLAY PANELS */
+        .overlay-panel { position:absolute; top:0; right:0; bottom:0; width:420px; background:var(--surface); border-left:1px solid var(--border); display:flex; flex-direction:column; transform:translateX(100%); transition:transform 0.25s ease; z-index:100; }
+        .overlay-panel.open { transform:translateX(0); }
+        .overlay-header { padding:14px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
+        .overlay-title { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--orange); }
+        .overlay-close { background:none; border:1px solid var(--border); color:var(--text-dim); font-family:var(--mono); font-size:10px; padding:4px 10px; cursor:pointer; transition:all 0.15s; }
+        .overlay-close:hover { border-color:var(--orange); color:var(--orange); }
+        .overlay-body { flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:12px; }
+        .overlay-body::-webkit-scrollbar { width:3px; }
+        .overlay-body::-webkit-scrollbar-thumb { background:var(--border2); }
+        .overlay-empty { font-size:11px; color:var(--text-muted); text-align:center; margin-top:40px; line-height:2; }
+
+        /* HISTORY */
+        .history-item { border:1px solid var(--border); background:var(--bg); cursor:pointer; transition:border-color 0.15s; }
+        .history-item:hover { border-color:var(--border2); }
+        .history-item-header { padding:10px 14px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+        .history-item-time { font-size:9px; color:var(--text-dim); letter-spacing:1px; }
+        .history-item-badge { font-size:9px; padding:2px 8px; letter-spacing:1px; text-transform:uppercase; }
+        .history-item-badge.fraud { background:rgba(204,34,0,0.15); color:var(--red); border:1px solid rgba(204,34,0,0.3); }
+        .history-item-badge.legitimate { background:rgba(0,204,68,0.1); color:var(--green); border:1px solid rgba(0,204,68,0.3); }
+        .history-item-badge.info { background:var(--orange-dim); color:var(--orange); border:1px solid rgba(255,102,0,0.2); }
+        .history-item-body { padding:12px 14px; }
+        .history-item-user { font-size:11px; color:var(--text-dim); margin-bottom:8px; line-height:1.5; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+        .history-item-response { font-size:11px; color:var(--text); line-height:1.6; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+        .history-item-score { margin-top:10px; padding-top:10px; border-top:1px solid var(--border); font-size:10px; color:var(--text-dim); display:flex; align-items:center; gap:8px; }
+        .history-score-val { font-weight:600; }
+        .history-score-val.low { color:var(--green); }
+        .history-score-val.high, .history-score-val.critical { color:var(--red); }
+        .history-score-val.medium { color:var(--yellow); }
+
+        /* REPORTS */
+        .report-section { border:1px solid var(--border); background:var(--bg); }
+        .report-section-header { padding:10px 14px; border-bottom:1px solid var(--border); font-size:9px; letter-spacing:2px; text-transform:uppercase; color:var(--orange); }
+        .report-section-body { padding:14px; }
+        .report-row { display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid var(--border); font-size:11px; }
+        .report-row:last-child { border-bottom:none; }
+        .report-row-label { color:var(--text-dim); }
+        .report-row-value { color:var(--text); font-weight:500; }
+        .report-row-value.danger { color:var(--red); }
+        .report-row-value.safe { color:var(--green); }
+        .report-row-value.warn { color:var(--yellow); }
+        .report-no-data { font-size:11px; color:var(--text-muted); text-align:center; margin-top:40px; line-height:2; }
+        .report-verdict-banner { padding:16px; margin-bottom:12px; display:flex; align-items:center; gap:12px; }
+        .report-verdict-banner.fraud { background:rgba(204,34,0,0.1); border:1px solid rgba(204,34,0,0.3); }
+        .report-verdict-banner.legitimate { background:rgba(0,204,68,0.08); border:1px solid rgba(0,204,68,0.2); }
+        .report-verdict-icon { font-size:24px; }
+        .report-verdict-text { font-size:13px; font-weight:600; letter-spacing:1px; }
+        .report-verdict-text.fraud { color:var(--red); }
+        .report-verdict-text.legitimate { color:var(--green); }
+        .report-verdict-sub { font-size:10px; color:var(--text-dim); margin-top:2px; }
+        .report-flags { display:flex; flex-direction:column; gap:6px; }
+        .report-flag { font-size:11px; color:var(--text-dim); display:flex; gap:8px; align-items:flex-start; padding:6px 0; border-bottom:1px solid var(--border); }
+        .report-flag:last-child { border-bottom:none; }
+        .report-flag-dot { color:var(--red); font-weight:700; flex-shrink:0; }
+        .report-timestamp { font-size:10px; color:var(--text-muted); text-align:right; margin-top:12px; padding-top:12px; border-top:1px solid var(--border); }
+
         @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
         @keyframes slideIn { from{opacity:0} to{opacity:1} }
         @keyframes blink { 0%,60%,100%{opacity:0.3} 30%{opacity:1} }
@@ -131,9 +188,9 @@
             <div class="brand-sub">Intelligent Fraud Detection System</div>
         </div>
         <div class="topbar-nav">
-            <div class="nav-item active">Analysis</div>
-            <div class="nav-item">History</div>
-            <div class="nav-item">Reports</div>
+            <div class="nav-item active" id="navAnalysis" onclick="switchView('analysis')">Analysis</div>
+            <div class="nav-item" id="navHistory" onclick="switchView('history')">History</div>
+            <div class="nav-item" id="navReports" onclick="switchView('reports')">Reports</div>
         </div>
     </div>
     <div class="topbar-right">
@@ -169,9 +226,10 @@
             <div class="no-analysis" id="noAnalysis">No transaction analysed yet. Describe a payment or upload a screenshot.</div>
         </div>
     </div>
+
     <div class="chat-panel">
         <div class="chat-header">
-            <div class="chat-title">Analysis Terminal</div>
+            <div class="chat-title" id="chatTitle">Analysis Terminal</div>
             <div class="chat-controls">
                 <button class="ctrl-btn" onclick="clearChat()">CLR</button>
                 <button class="ctrl-btn" onclick="exportChat()">EXP</button>
@@ -179,14 +237,14 @@
         </div>
         <div class="messages" id="messages">
             <div class="welcome" id="welcome">
-                <div class="welcome-tag">FraudGuard v1.0 — Ready</div>
+                <div class="welcome-tag">FraudGuard v2.0 — NeurIPS 2022 Dataset</div>
                 <div class="welcome-title">Describe a transaction.<br><strong>Get an instant fraud assessment.</strong></div>
-                <div class="welcome-desc">Powered by an XGBoost model trained on 590,540 real transactions. Describe any payment in plain English, upload a screenshot, or ask about fraud prevention.</div>
+                <div class="welcome-desc">Powered by an XGBoost model trained on 1,000,000 bank account transactions. Describe any payment in plain English, upload a screenshot, or ask about fraud prevention.</div>
                 <div class="welcome-grid">
-                    <div class="welcome-card"><div class="welcome-card-title">Transaction Analysis</div><div class="welcome-card-desc">Score any transaction with fraud probability and confidence level</div></div>
-                    <div class="welcome-card"><div class="welcome-card-title">CNP & ATO Detection</div><div class="welcome-card-desc">Classify fraud type based on detected behavioral patterns</div></div>
+                    <div class="welcome-card"><div class="welcome-card-title">Transaction Analysis</div><div class="welcome-card-desc">Score any transaction with fraud risk flag and model confidence</div></div>
+                    <div class="welcome-card"><div class="welcome-card-title">Fraud Pattern Detection</div><div class="welcome-card-desc">Identify behavioral patterns linked to account fraud</div></div>
                     <div class="welcome-card"><div class="welcome-card-title">Screenshot Upload</div><div class="welcome-card-desc">Upload a payment notification and get instant analysis</div></div>
-                    <div class="welcome-card"><div class="welcome-card-title">Prevention Advice</div><div class="welcome-card-desc">Specific steps to take based on the fraud type detected</div></div>
+                    <div class="welcome-card"><div class="welcome-card-title">Prevention Advice</div><div class="welcome-card-desc">Specific steps based on the fraud type detected</div></div>
                 </div>
             </div>
         </div>
@@ -208,12 +266,51 @@
             <div class="input-footer">ENTER to send · SHIFT+ENTER for new line · F1–F4 to switch mode · 📎 to upload screenshot</div>
         </div>
     </div>
+
+    <!-- HISTORY PANEL -->
+    <div class="overlay-panel" id="historyPanel">
+        <div class="overlay-header">
+            <div class="overlay-title">Session History</div>
+            <button class="overlay-close" onclick="switchView('analysis')">✕ CLOSE</button>
+        </div>
+        <div class="overlay-body" id="historyBody">
+            <div class="overlay-empty">No history yet.<br>Start a conversation to see it here.</div>
+        </div>
+    </div>
+
+    <!-- REPORTS PANEL -->
+    <div class="overlay-panel" id="reportsPanel">
+        <div class="overlay-header">
+            <div class="overlay-title">Risk Report</div>
+            <button class="overlay-close" onclick="switchView('analysis')">✕ CLOSE</button>
+        </div>
+        <div class="overlay-body" id="reportsBody">
+            <div class="report-no-data">No transaction analysed yet.<br>Run an analysis first, then view the report here.</div>
+        </div>
+    </div>
 </div>
+
 <script>
     let currentImage = null;
     let currentMode = 'transaction';
+    let sessionHistory = [];
+    let lastFraudData = null;
+    let lastUserMsg = null;
+    let lastAssistantMsg = null;
+
     const modeLabels = { transaction:'ANALYSE', education:'LEARN', prevention:'PREVENT', report:'REPORT' };
-    const modePlaceholders = { transaction:'Describe a transaction to analyse...', education:'Ask anything about fraud, scams, or financial security...', prevention:'Describe a situation to get prevention advice...', report:'Describe a transaction to generate a risk report...' };
+    const modePlaceholders = {
+        transaction:'Describe a transaction to analyse...',
+        education:'Ask anything about fraud, scams, or financial security...',
+        prevention:'Describe a situation to get prevention advice...',
+        report:'Describe a transaction to generate a risk report...'
+    };
+    const modeStarters = {
+        transaction:'Analyse this transaction: ',
+        education:'Explain to me: ',
+        prevention:'How can I protect myself from: ',
+        report:'Generate a risk report for: '
+    };
 
     function updateClock() { document.getElementById('clock').textContent = new Date().toTimeString().split(' ')[0]; }
     setInterval(updateClock, 1000); updateClock();
@@ -225,24 +322,157 @@
         if (e.key==='F4'){e.preventDefault();setMode('report');}
     });
 
-    const modeStarters = {
-    transaction: 'Analyse this transaction: ',
-    education: 'Explain to me: ',
-    prevention: 'How can I protect myself from: ',
-    report: 'Generate a risk report for: '
-};
+    function setMode(mode) {
+        currentMode = mode;
+        document.getElementById('inputLabel').textContent = modeLabels[mode];
+        document.getElementById('messageInput').placeholder = modePlaceholders[mode];
+        document.getElementById('messageInput').value = modeStarters[mode];
+        autoResize(document.getElementById('messageInput'));
+        document.getElementById('messageInput').focus();
+        switchView('analysis');
+    }
 
-function setMode(mode) {
-    currentMode = mode;
-    document.getElementById('inputLabel').textContent = modeLabels[mode];
-    document.getElementById('messageInput').placeholder = modePlaceholders[mode];
-    document.getElementById('messageInput').value = modeStarters[mode];
-    autoResize(document.getElementById('messageInput'));
-    document.getElementById('messageInput').focus();
-}
+    function switchView(view) {
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        document.getElementById('historyPanel').classList.remove('open');
+        document.getElementById('reportsPanel').classList.remove('open');
+
+        if (view === 'analysis') {
+            document.getElementById('navAnalysis').classList.add('active');
+            document.getElementById('chatTitle').textContent = 'Analysis Terminal';
+        } else if (view === 'history') {
+            document.getElementById('navHistory').classList.add('active');
+            document.getElementById('chatTitle').textContent = 'Session History';
+            document.getElementById('historyPanel').classList.add('open');
+            renderHistory();
+        } else if (view === 'reports') {
+            document.getElementById('navReports').classList.add('active');
+            document.getElementById('chatTitle').textContent = 'Risk Report';
+            document.getElementById('reportsPanel').classList.add('open');
+            renderReport();
+        }
+    }
+
+    function renderHistory() {
+        const body = document.getElementById('historyBody');
+        if (sessionHistory.length === 0) {
+            body.innerHTML = '<div class="overlay-empty">No history yet.<br>Start a conversation to see it here.</div>';
+            return;
+        }
+        body.innerHTML = '';
+        [...sessionHistory].reverse().forEach(entry => {
+            const hasScore = entry.fraudData !== null;
+            const verdict = hasScore ? entry.fraudData.verdict : null;
+            const badgeClass = hasScore ? (verdict === 'FRAUD' ? 'fraud' : 'legitimate') : 'info';
+            const badgeText = hasScore ? verdict : 'INFO';
+            const riskLabel = hasScore ? entry.fraudData.risk_level.split('—')[0].trim().toLowerCase() : '';
+
+            const div = document.createElement('div');
+            div.className = 'history-item';
+            div.innerHTML = `
+                <div class="history-item-header">
+                    <div class="history-item-time">${entry.time}</div>
+                    <div class="history-item-badge ${badgeClass}">${badgeText}</div>
+                </div>
+                <div class="history-item-body">
+                    <div class="history-item-user">▸ ${entry.userMsg}</div>
+                    <div class="history-item-response">${entry.assistantMsg}</div>
+                    ${hasScore ? `
+                    <div class="history-item-score">
+                        <span>Model confidence:</span>
+                        <span class="history-score-val ${riskLabel}">${entry.fraudData.probability}%</span>
+                        <span>·</span>
+                        <span>${entry.fraudData.risk_level}</span>
+                    </div>` : ''}
+                </div>
+            `;
+            div.onclick = () => switchView('analysis');
+            body.appendChild(div);
+        });
+    }
+
+    function renderReport() {
+        const body = document.getElementById('reportsBody');
+        if (!lastFraudData) {
+            body.innerHTML = '<div class="report-no-data">No transaction analysed yet.<br>Run an analysis first, then view the report here.</div>';
+            return;
+        }
+
+        const fd = lastFraudData;
+        const isFraud = fd.verdict === 'FRAUD';
+        const verdictClass = isFraud ? 'fraud' : 'legitimate';
+        const riskParts = fd.risk_level.split('—');
+        const riskLabel = riskParts[0].trim();
+        const riskAction = riskParts[1] ? riskParts[1].trim() : '';
+        const riskClass = riskLabel.toLowerCase();
+
+        body.innerHTML = `
+            <div class="report-verdict-banner ${verdictClass}">
+                <div class="report-verdict-icon">${isFraud ? '🔴' : '🟢'}</div>
+                <div>
+                    <div class="report-verdict-text ${verdictClass}">${fd.verdict}</div>
+                    <div class="report-verdict-sub">${riskAction || riskLabel}</div>
+                </div>
+            </div>
+            <div class="report-section">
+                <div class="report-section-header">Model Assessment</div>
+                <div class="report-section-body">
+                    <div class="report-row">
+                        <div class="report-row-label">Fraud Probability</div>
+                        <div class="report-row-value ${isFraud ? 'danger' : 'safe'}">${fd.probability}%</div>
+                    </div>
+                    <div class="report-row">
+                        <div class="report-row-label">Risk Level</div>
+                        <div class="report-row-value ${riskClass === 'low' ? 'safe' : riskClass === 'medium' ? 'warn' : 'danger'}">${riskLabel}</div>
+                    </div>
+                    <div class="report-row">
+                        <div class="report-row-label">Recommended Action</div>
+                        <div class="report-row-value ${isFraud ? 'danger' : 'safe'}">${riskAction || 'Continue monitoring'}</div>
+                    </div>
+                    <div class="report-row">
+                        <div class="report-row-label">Decision Threshold</div>
+                        <div class="report-row-value">${fd.threshold_used}%</div>
+                    </div>
+                    <div class="report-row">
+                        <div class="report-row-label">Final Verdict</div>
+                        <div class="report-row-value ${isFraud ? 'danger' : 'safe'}">${fd.verdict}</div>
+                    </div>
+                </div>
+            </div>
+            ${fd.flags && fd.flags.length > 0 ? `
+            <div class="report-section">
+                <div class="report-section-header">Risk Flags Detected (${fd.flags.length})</div>
+                <div class="report-section-body">
+                    <div class="report-flags">
+                        ${fd.flags.map(f => `<div class="report-flag"><div class="report-flag-dot">!</div><div>${f}</div></div>`).join('')}
+                    </div>
+                </div>
+            </div>` : `
+            <div class="report-section">
+                <div class="report-section-header">Risk Flags</div>
+                <div class="report-section-body"><div style="font-size:11px;color:var(--text-dim)">No specific risk flags detected.</div></div>
+            </div>`}
+            ${lastUserMsg ? `
+            <div class="report-section">
+                <div class="report-section-header">Transaction Description</div>
+                <div class="report-section-body"><div style="font-size:11px;color:var(--text-dim);line-height:1.7">${lastUserMsg}</div></div>
+            </div>` : ''}
+            <div class="report-section">
+                <div class="report-section-header">Disclaimer</div>
+                <div class="report-section-body"><div style="font-size:10px;color:var(--text-muted);line-height:1.8">This report is generated by an ML model trained on the NeurIPS 2022 Bank Account Fraud Dataset. Model confidence reflects statistical patterns only. High risk flags indicate the need for human review — not a definitive fraud verdict. Always verify with additional checks before taking action.</div></div>
+            </div>
+            <div class="report-timestamp">Generated: ${new Date().toLocaleString()}</div>
+        `;
+    }
+
     function autoResize(el) { el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,120)+'px'; }
     function handleKey(e) { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();} }
-    function handleImage(e) { const file=e.target.files[0]; if(!file) return; const r=new FileReader(); r.onload=ev=>{currentImage=ev.target.result;document.getElementById('previewImg').src=currentImage;document.getElementById('imagePreviewBar').classList.add('visible');}; r.readAsDataURL(file); }
+    function handleImage(e) {
+        const file=e.target.files[0]; if(!file) return;
+        const r=new FileReader();
+        r.onload=ev=>{currentImage=ev.target.result;document.getElementById('previewImg').src=currentImage;document.getElementById('imagePreviewBar').classList.add('visible');};
+        r.readAsDataURL(file);
+    }
     function removeImage() { currentImage=null; document.getElementById('imagePreviewBar').classList.remove('visible'); document.getElementById('imageInput').value=''; }
     function getTime() { return new Date().toTimeString().split(' ')[0]; }
 
@@ -254,40 +484,75 @@ function setMode(mode) {
         messages.appendChild(div); messages.scrollTop=messages.scrollHeight;
     }
 
-    function showTyping() { const m=document.getElementById('messages'); const d=document.createElement('div'); d.className='typing-indicator'; d.id='typing'; d.innerHTML='<div class="typing-prefix">Processing</div><div class="typing-body"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>'; m.appendChild(d); m.scrollTop=m.scrollHeight; }
+    function showTyping() {
+        const m=document.getElementById('messages');
+        const d=document.createElement('div'); d.className='typing-indicator'; d.id='typing';
+        d.innerHTML='<div class="typing-prefix">Processing</div><div class="typing-body"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>';
+        m.appendChild(d); m.scrollTop=m.scrollHeight;
+    }
     function removeTyping() { const t=document.getElementById('typing'); if(t) t.remove(); }
 
     function updateRiskPanel(data) {
         if(!data) return;
         document.getElementById('noAnalysis').style.display='none';
         document.getElementById('riskDisplay').classList.add('visible');
-        const level=data.risk_level.toLowerCase();
-        const score=document.getElementById('riskScore'); score.textContent=data.probability+'%'; score.className=`risk-score ${level}`;
+        const riskLabel = data.risk_level.split('—')[0].trim().toLowerCase();
+        const score=document.getElementById('riskScore'); score.textContent=data.probability+'%'; score.className=`risk-score ${riskLabel}`;
         document.getElementById('riskVerdict').textContent=data.verdict+' — '+data.risk_level;
-        const bar=document.getElementById('riskBarFill'); bar.style.width=data.probability+'%'; bar.className=`risk-bar-fill ${level}`;
+        const bar=document.getElementById('riskBarFill'); bar.style.width=Math.min(data.probability * 3, 100)+'%'; bar.className=`risk-bar-fill ${riskLabel}`;
         const fl=document.getElementById('riskFlagList'); fl.innerHTML='';
         (data.flags||[]).forEach(f=>{const d=document.createElement('div');d.className='risk-flag-item';d.textContent=f;fl.appendChild(d);});
     }
 
-    function clearChat() { document.getElementById('messages').innerHTML=''; fetch('/clear',{method:'POST'}); }
+    function clearChat() {
+        document.getElementById('messages').innerHTML='';
+        sessionHistory=[]; lastFraudData=null; lastUserMsg=null; lastAssistantMsg=null;
+        fetch('/clear',{method:'POST'});
+    }
 
     function exportChat() {
         const msgs=document.querySelectorAll('.message'); let text='FRAUDGUARD SESSION EXPORT\n'+new Date().toISOString()+'\n\n';
-        msgs.forEach(m=>{const r=m.querySelector('.message-role').textContent;const b=m.querySelector('.message-body').textContent;const t=m.querySelector('.message-time-small').textContent;text+=`[${t}] ${r}:\n${b}\n\n`;});
+        msgs.forEach(m=>{
+            const r=m.querySelector('.message-role').textContent;
+            const b=m.querySelector('.message-body').textContent;
+            const t=m.querySelector('.message-time-small').textContent;
+            text+=`[${t}] ${r}:\n${b}\n\n`;
+        });
         const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([text],{type:'text/plain'})); a.download='fraudguard-session.txt'; a.click();
     }
 
     async function send() {
-        const input=document.getElementById('messageInput'); const sendBtn=document.getElementById('sendBtn');
+        const input=document.getElementById('messageInput');
+        const sendBtn=document.getElementById('sendBtn');
         const message=input.value.trim(); if(!message&&!currentImage) return;
+
+        lastUserMsg = message;
         addMessage('user', message||'[Screenshot uploaded for analysis]');
         input.value=''; input.style.height='auto'; sendBtn.disabled=true;
         const imgToSend=currentImage; removeImage(); showTyping();
+
         try {
             const res=await fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message,image:imgToSend,mode:currentMode})});
-            const data=await res.json(); removeTyping(); addMessage('assistant',data.message);
-            if(data.fraud_data) updateRiskPanel(data.fraud_data);
-        } catch(err) { removeTyping(); addMessage('assistant','Connection error. Please try again.'); }
+            const data=await res.json(); removeTyping();
+            addMessage('assistant',data.message);
+            lastAssistantMsg=data.message;
+
+            if(data.fraud_data) {
+                lastFraudData=data.fraud_data;
+                updateRiskPanel(data.fraud_data);
+            }
+
+            sessionHistory.push({
+                time: getTime(),
+                userMsg: message||'[Screenshot]',
+                assistantMsg: data.message,
+                fraudData: data.fraud_data||null
+            });
+
+        } catch(err) {
+            removeTyping();
+            addMessage('assistant','Connection error. Please try again.');
+        }
         sendBtn.disabled=false; input.focus();
     }
 </script>

@@ -3,190 +3,179 @@ from groq import Groq
 from model import score_transaction
 from dotenv import load_dotenv
 import os
-import base64
+import json
 
-load_dotenv()
+load_dotenv(override=True)
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
 groq_client = Groq(api_key=os.getenv('GROQ_API_KEY'))
 
-SYSTEM_PROMPT = """You are FraudGuard, an intelligent fraud detection assistant powered by a real XGBoost machine learning model trained on 590,540 real financial transactions.
+SYSTEM_PROMPT = """You are FraudGuard — a fraud intelligence system backed by a real machine learning model trained on 1,000,000 bank account transactions from the NeurIPS 2022 Bank Account Fraud Dataset.
 
-YOUR PERSONALITY:
-- Conversational, confident, and clear. Talk like a knowledgeable friend, not a robot.
-- Match response length to the question. Greetings get short replies. Fraud analysis gets full explanations. Education questions get thorough answers.
-- Never use unnecessary filler. Every sentence should add value.
+You think like a seasoned fraud analyst who also happens to be great at explaining things. You've seen thousands of fraud cases. You know the patterns. When someone describes a transaction or an application, you don't just run it through a checklist — you actually think about what's going on, what the likely story is, and what the person should do.
 
-STRICT RULES FOR TRANSACTION ANALYSIS:
-- The ML model verdict is FINAL. Never change the probability, never contradict it.
-- Always explain in plain English what caused the fraud — what specific pattern made the model suspicious.
-- Classify the fraud type (CNP, ATO, Card Testing) and explain what that means in context.
-- Tell the user exactly what to do right now.
+You talk like a person. Not an assistant, not a bot, not a product. A person who knows a lot about fraud and genuinely wants to help. You're direct, you're clear, and you don't waste words. When something is suspicious you say so plainly. When something looks fine you say that too without hedging.
 
-RESPONSE FORMAT FOR TRANSACTIONS:
-Start with the verdict clearly. Then explain what caused it as if talking to someone who knows nothing about fraud. Then classify the fraud type. Then tell them what to do. Use natural paragraphs, not bullet points.
+Always respond in English by default. Only switch to another language if the user explicitly writes to you in that language first.
 
-FOR GENERAL QUESTIONS:
-Answer thoroughly. If someone asks how a fraud type works, explain it properly with real examples. If someone asks what to do after fraud, walk them through it step by step.
+You remember everything said in the conversation. If someone mentioned a transaction earlier and now asks a follow up, you connect the dots without being asked.
 
-FOR PREVENTION:
-Give specific, practical advice tied to the situation. Not generic tips.
+When someone describes a transaction or suspicious activity, think through it naturally — what patterns stand out, what type of fraud does this look like. Then score it using your ML model and explain what the model found in plain English. Not jargon, not a template — actual explanation of why this specific situation looks suspicious or not.
 
-WHEN GREETED:
-Introduce yourself warmly in 2-3 sentences. Tell them what you can help with and give one example to get them started."""
-MODE_PROMPTS = {
-    'transaction': "The user wants to analyse a specific transaction. Extract details and score it with the ML model.",
-    'education': "The user wants to learn about fraud. Answer their question in 3 sentences max. No model scoring needed.",
-    'prevention': "The user wants prevention advice. Give exactly 3 specific actionable steps. No model scoring needed.",
-    'report': "The user wants a structured risk report. Use this format exactly:\nRISK LEVEL: [level]\nFRAUD TYPE: [type]\nPROBABILITY: [%]\nTOP FLAGS: [list]\nRECOMMENDED ACTION: [one sentence]"
-}
+ONLY output a <<SCORE>> block when the user is clearly describing a specific suspicious transaction or financial activity they want analysed. Never output a <<SCORE>> block for greetings, general questions, or casual conversation.
 
-def extract_transaction_from_text(user_message, conversation_history):
-    """Use Groq to extract transaction details from natural language."""
-    
-    extraction_prompt = """Extract transaction details from the user message and return ONLY a JSON object.
+To score a transaction, extract what you can from what the user said and output this block at the very END of your response, after everything else:
+<<SCORE>>
+{"housing_status": 0, "device_os": 2, "has_other_cards": 0, "keep_alive_session": 0, "phone_home_valid": 0, "email_is_free": 1, "income": 0.3, "prev_address_months_count": 2, "foreign_request": 1, "credit_risk_score": 80}
+<</SCORE>>
 
-If an amount is mentioned in a non-USD currency, convert it to USD using these approximate rates:
-- INR (rupees): divide by 83
-- GBP (pounds): multiply by 1.27
-- EUR (euros): multiply by 1.08
-- AED (dirhams): divide by 3.67
-- CAD: multiply by 0.74
-- AUD: multiply by 0.65
-- SGD: multiply by 0.74
-If currency is unclear, assume USD.
+Only include fields you are confident about from what the user described. Use these mappings:
+- renting / no fixed address / unstable housing = housing_status: 0, owns home = housing_status: 3, average housing = housing_status: 2
+- Windows = device_os: 0, Mac = device_os: 1, Linux = device_os: 2, Android = device_os: 3, iOS = device_os: 4
+- has no other bank cards = has_other_cards: 0, has other cards = has_other_cards: 1
+- session ended quickly or no keep alive = keep_alive_session: 0, normal session = keep_alive_session: 1
+- no home phone or invalid = phone_home_valid: 0, has valid home phone = phone_home_valid: 1
+- gmail / yahoo / hotmail / free email = email_is_free: 1, work or corporate email = email_is_free: 0
+- income is a decimal 0 to 1 (0.1 = very low, 0.5 = average, 0.9 = high)
+- prev_address_months_count: months at previous address, 0 if just moved or unknown
+- foreign_request: 1 if request is coming from another country, 0 if local
+- credit_risk_score: 0 to 300, higher is better (below 100 = risky, 150 = average, 250+ = good)
 
-Return this exact format with no extra text:
-{
-  "amount": number in USD or null,
-  "hour": number 0-23 or null,
-  "is_mobile": 1 or 0 or null,
-  "is_free_email": 1 or 0 or null,
-  "email_match": 1 or 0 or null,
-  "has_identity": 1 or 0 or null,
-  "original_currency": "USD" or currency code,
-  "original_amount": original number or null,
-  "is_asking_question": true or false,
-  "has_transaction": true or false
-}"""
+The ML model's probability is final. You explain it, you never argue with it or change it.
 
-    response = groq_client.chat.completions.create(
-       model="meta-llama/llama-4-scout-17b-16e-instruct",
-        messages=[
-            {"role": "system", "content": extraction_prompt},
-            {"role": "user", "content": user_message}
-        ],
-        temperature=0
-    )
-    
-    import json
-    try:
-        text = response.choices[0].message.content.strip()
-        # clean up markdown if present
-        if '```' in text:
-            text = text.split('```')[1]
-            if text.startswith('json'):
-                text = text[4:]
-        return json.loads(text.strip())
-    except:
-        return {"has_transaction": False, "is_asking_question": True}
+When someone just says hi or starts casual conversation, respond naturally in one or two sentences. Never list your features or introduce yourself with a paragraph.
+
+When someone asks a general question about fraud — how phishing works, what to do if their card is stolen, how to spot a scam — answer it properly with real knowledge. Give them something genuinely useful, not generic advice they could have googled.
+
+For prevention advice, be specific to their situation. Not generic tips.
+
+You are not a demo. You are not a prototype. You are a working fraud intelligence system and you act like one."""
+
+
+
+
+def extract_score_block(text):
+    if '<<SCORE>>' in text:
+        start = text.index('<<SCORE>>') + len('<<SCORE>>')
+        if '<</SCORE>>' in text:
+            end = text.index('<</SCORE>>')
+        else:
+            end = len(text)
+        clean_text = text[:text.index('<<SCORE>>')].strip()
+        json_str = text[start:end].strip()
+        try:
+            transaction_info = json.loads(json_str)
+            return clean_text, transaction_info
+        except:
+            return clean_text, None
+    return text, None
+
 
 @app.route('/')
 def index():
     session['conversation'] = []
     return render_template('index.html')
 
+
+@app.route('/health')
+def health():
+    return 'ok', 200
+
+
 @app.route('/chat', methods=['POST'])
 def chat():
     data = request.json
     user_message = data.get('message', '')
     image_data = data.get('image', None)
-    
+    mode = data.get('mode', 'transaction')
+
     if 'conversation' not in session:
         session['conversation'] = []
-    
+
     conversation = session['conversation']
-    
-    # if image uploaded, extract transaction details from it
+
     if image_data:
-        image_content = [
-            {
-                "type": "image_url",
-                "image_url": {"url": image_data}
-            },
-            {
-                "type": "text", 
-                "text": "Extract all transaction details from this payment screenshot. What is the amount, time, merchant, and any other relevant details?"
-            }
-        ]
-        
-        image_response = groq_client.chat.completions.create(
-            model="meta-llama/llama-4-scout-17b-16e-instruct",
-            messages=[{"role": "user", "content": image_content}]
-        )
-        user_message = image_response.choices[0].message.content
-    
-    # extract transaction details
-    extracted = extract_transaction_from_text(user_message, conversation)
-    
-    # build context for groq
-    mode = data.get('mode', 'transaction')
-    mode_context = MODE_PROMPTS.get(mode, MODE_PROMPTS['transaction'])
-    messages = [{"role": "system", "content": SYSTEM_PROMPT + "\n\nCurrent mode: " + mode_context}]
-    messages.extend(conversation[-10:])  # last 10 messages for memory
-    
-    if extracted.get('has_transaction'):
-        # score with ml model
-        transaction_info = {k: v for k, v in extracted.items() 
-                          if k not in ['is_asking_question', 'has_transaction'] and v is not None}
-        
-        result = score_transaction(transaction_info)
-        
-        # tell groq the model results
-        analysis_context = f"""The ML model has scored this transaction. These results are FINAL and you must not change them:
+        try:
+            image_response = groq_client.chat.completions.create(
+                model="meta-llama/llama-4-scout-17b-16e-instruct",
+                messages=[{
+                    "role": "user",
+                    "content": [
+                        {"type": "image_url", "image_url": {"url": image_data}},
+                        {"type": "text", "text": "Extract all transaction details from this payment screenshot — amount, currency, time, merchant, device type, email addresses if visible, and anything else relevant to fraud detection."}
+                    ]
+                }]
+            )
+            user_message = image_response.choices[0].message.content
+        except Exception as e:
+            user_message = "I uploaded a payment screenshot but couldn't read it clearly. Can you help me assess if it might be fraud?"
 
-Original Amount: {extracted.get('original_amount')} {extracted.get('original_currency')} (converted to ${transaction_info.get('amount')} USD for model scoring)
-Fraud Probability: {result['probability']}%
-Verdict: {result['verdict']}
-Risk Level: {result['risk_level']}
-Flags: {', '.join(result['flags']) if result['flags'] else 'none'}
+    mode_hints = {
+        'education': ' (user wants to learn about fraud)',
+        'prevention': ' (user wants prevention advice)',
+        'report': ' (user wants a structured risk report)'
+    }
 
-User message: {user_message}
+    message_with_hint = user_message
+    if mode != 'transaction' and mode in mode_hints:
+        message_with_hint = user_message + mode_hints[mode]
 
-Follow the exact response format. Do not change the verdict or probability."""
+    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+    messages.extend(conversation[-12:])
+    messages.append({"role": "user", "content": message_with_hint})
 
-        messages.append({"role": "user", "content": analysis_context})
-    else:
-        messages.append({"role": "user", "content": user_message})
-    
-    # get groq response
     response = groq_client.chat.completions.create(
-        model="meta-llama/llama-4-scout-17b-16e-instruct",
+        model="llama-3.3-70b-versatile",
         messages=messages,
         temperature=0.7,
-        max_tokens=1000
+        max_tokens=800
     )
-    
-    assistant_message = response.choices[0].message.content
-    
-    # update conversation memory
+
+    raw_response = response.choices[0].message.content
+    print("RAW RESPONSE END:", raw_response[-300:])
+
+    clean_response, transaction_info = extract_score_block(raw_response)
+
+    transaction_keywords = ['transaction', 'payment', 'transfer', 'charge', 'purchase',
+                            'fraud', 'suspicious', 'account', 'card', 'bank', 'money',
+                            'amount', 'sent', 'received', 'debit', 'credit', 'upi',
+                            'withdraw', 'deposit', 'loan', 'request', 'email', 'device']
+    message_lower = user_message.lower()
+    has_transaction_context = any(word in message_lower for word in transaction_keywords)
+
+    if not has_transaction_context:
+        transaction_info = None
+
+    fraud_result = None
+    if transaction_info:
+        try:
+            fraud_result = score_transaction(transaction_info)
+            verdict_emoji = "🔴" if fraud_result['verdict'] == 'FRAUD' else "🟢"
+            score_summary = f"\n\n{verdict_emoji} Risk Flag: {fraud_result['risk_level']} ({fraud_result['probability']}% model confidence)"
+            clean_response = clean_response + score_summary
+        except Exception as e:
+            print(f"Scoring error: {e}")
+
     conversation.append({"role": "user", "content": user_message})
-    conversation.append({"role": "assistant", "content": assistant_message})
+    conversation.append({"role": "assistant", "content": clean_response})
     session['conversation'] = conversation
     session.modified = True
-    
-    result_data = {'message': assistant_message}
-    if extracted.get('has_transaction'):
-        result_data['fraud_data'] = result
-    
-    return jsonify(result_data)
+
+    result = {'message': clean_response}
+    if fraud_result:
+        result['fraud_data'] = fraud_result
+
+    return jsonify(result)
+
 
 @app.route('/clear', methods=['POST'])
 def clear():
     session['conversation'] = []
     return jsonify({'status': 'cleared'})
 
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=True)
