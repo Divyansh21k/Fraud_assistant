@@ -1,21 +1,59 @@
-# FraudGuard — Fraud Detection Assistant
+# 🛡️ FraudGuard — AI Fraud Detection Assistant
 
-A conversational fraud detection assistant powered by a real machine learning model. Describe any transaction in plain English and get an instant fraud risk assessment.
+### [🚀 Try it Live](https://fraud-assistant.onrender.com) | [📓 Notebook Repo](https://github.com/Divyansh21k/Fraud_detection_ml)
 
-Live: https://fraud-assistant.onrender.com | 
+## About FraudGuard
 
-## What is this?
+FraudGuard is a conversational fraud detection assistant powered by a real machine learning model trained on 1,000,000 bank account transactions. You describe a transaction in plain English and get an instant fraud risk assessment with explanation.
 
-After completing Phase 1 of my fraud detection project on the IEEE-CIS Kaggle competition, I realized the model I built there could not be used in a real product. The features were all proprietary Vesta columns with names like C13 and V258. No real person knows what those mean.
+This is Phase 2 of a two phase fraud detection project. In Phase 1 I competed on the IEEE-CIS Kaggle competition and scored 0.8495. After that I realized the IEEE features are proprietary and useless in conversation, so I retrained on the NeurIPS 2022 Bank Account Fraud Dataset which has fully human readable features and built this assistant around it.
 
-So I retrained on the NeurIPS 2022 Bank Account Fraud Dataset which has fully human readable features like housing status, device type, email provider, and credit score. Then I built FraudGuard around it. You just describe what happened and the model scores it.
+## Why FraudGuard
 
-## Project Structure
+Most fraud detection models live inside Jupyter notebooks. I wanted to build something real that anyone could actually use. The challenge was bridging the gap between ML features and plain English — FraudGuard solves that by using an LLM to extract features from natural language and pass them to the model.
+
+## ✨ Features
+
+### Core Functionality
+
+🤖 **Transaction Analysis**
+- Describe any transaction in plain English
+- XGBoost model scores it instantly
+- LLM explains what the model found and why
+- Risk flag with recommended action (Monitor / Review / Block)
+
+📊 **Risk Reports**
+- Structured report for every analysed transaction
+- Model confidence, risk level, recommended action
+- Full list of detected risk flags
+- Disclaimer explaining model limitations honestly
+
+🕐 **Session History**
+- Every conversation saved with timestamps
+- Fraud and legitimate badges on each entry
+- Model confidence shown for scored transactions
+- Click any entry to jump back to that point
+
+📸 **Screenshot Upload**
+- Upload any payment notification image
+- Vision LLM extracts transaction details automatically
+- Analysed exactly like a text description
+
+🌍 **Multi-language Support**
+- Responds in whatever language you write in
+- Switch languages mid conversation
+
+💡 **Fraud Education**
+- Ask anything about how fraud works
+- Phishing, account takeover, card not present fraud
+- Specific prevention advice for your situation
+
+## 📁 Project Structure
 ```
 Fraud_assistant/
 ├── app.py                  # Flask backend, Groq API integration, chat routes
 ├── model.py                # Loads ML model, scores transactions, returns risk verdict
-├── fraudguard_v2.pkl       # Trained XGBoost model (Git LFS)
+├── fraudguard_v2.pkl       # Trained XGBoost model stored via Git LFS
 ├── requirements.txt        # Python dependencies
 ├── templates/
 │   └── index.html          # Bloomberg terminal UI, History and Reports panels
@@ -23,58 +61,44 @@ Fraud_assistant/
     └── style.css           # Additional styles
 ```
 
-## How it works
+## 🧠 The ML Model
 
-You type a description of a transaction or suspicious activity. The LLM reads your message, extracts the relevant features like whether you used a free email, whether the request came from a foreign country, what your housing situation is, and maps them to the model's input format. The XGBoost model then scores the transaction and returns a fraud probability. The LLM explains what the model found in plain English.
+| Property | Detail |
+|---|---|
+| Dataset | NeurIPS 2022 Bank Account Fraud, 1,000,000 transactions |
+| Algorithm | XGBoost |
+| Class imbalance handling | 10:1 undersampling |
+| AUC-PR | 0.55 on balanced validation |
+| Top features | housing_status, device_os, has_other_cards, keep_alive_session, phone_home_valid |
+| Decision threshold | 10% — flags for review rather than hard block |
 
-The model flags transactions for review rather than making a definitive verdict. This is intentional and reflects how real fraud systems work.
+The model flags suspicious transactions for human review rather than making a definitive verdict. This is intentional — real fraud systems work this way because false positives have a real cost.
 
-## The ML Model
+## 🛠️ Tech Stack
 
-Dataset: NeurIPS 2022 Bank Account Fraud Dataset, 1,000,000 transactions
-Algorithm: XGBoost with 10:1 undersampling to handle class imbalance
-AUC-PR: 0.55 on balanced validation set
-Top features by importance: housing_status, device_os, has_other_cards, keep_alive_session, phone_home_valid
+**Backend**
+![Python](https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white)
+![Flask](https://img.shields.io/badge/Flask-000000?style=flat&logo=flask&logoColor=white)
+![XGBoost](https://img.shields.io/badge/XGBoost-FF6600?style=flat)
+![Groq](https://img.shields.io/badge/Groq-FF6600?style=flat)
 
-I chose undersampling over scale_pos_weight because it gave significantly better AUC-PR. The dataset has a 90:1 class imbalance so the model needs to see balanced examples during training to learn fraud patterns properly.
+**Frontend**
+![HTML](https://img.shields.io/badge/HTML5-E34F26?style=flat&logo=html5&logoColor=white)
+![CSS](https://img.shields.io/badge/CSS3-1572B6?style=flat&logo=css3&logoColor=white)
+![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=flat&logo=javascript&logoColor=black)
 
-## Features
+**Deployment**
+![Render](https://img.shields.io/badge/Render-46E3B7?style=flat&logo=render&logoColor=white)
+![Git LFS](https://img.shields.io/badge/Git_LFS-F05032?style=flat&logo=git&logoColor=white)
 
-Transaction Analysis: Describe any payment or account application and get a fraud risk score with explanation
-
-Session History: Every conversation in the session is saved and viewable with timestamps and fraud verdicts
-
-Risk Reports: Structured report for the last analysed transaction including model confidence, risk flags, recommended action, and a disclaimer
-
-Screenshot Upload: Upload a payment notification image and the vision LLM extracts the details automatically
-
-Prevention Advice: Ask about any fraud scenario and get specific actionable advice
-
-Fraud Education: Ask general questions about how fraud works, phishing, account takeover, and more
-
-## Tech Stack
-
-Backend: Python, Flask, Groq API (Llama 3.3-70B for chat, Llama 4 Scout for vision)
-ML: XGBoost, scikit-learn, pandas
-Frontend: HTML, CSS, JavaScript, IBM Plex Mono
-Deployment: Render.com, Git LFS for model file
-
-## Why these choices
-
-Groq over OpenAI: Groq is free for development and Llama 3.3-70B is genuinely capable for this use case. The latency is also very low which matters for a real time assistant.
-
-Render over Vercel: Flask needs a persistent server process. Vercel is serverless and would not work for a Flask app that loads a 3MB model at startup.
-
-Undersampling over SMOTE: SMOTE generates synthetic fraud samples which can introduce noise. Undersampling keeps only real data and gave better results on this dataset.
-
-## How to run locally
+## 🚀 How to Run Locally
 ```bash
 git clone https://github.com/Divyansh21k/Fraud_assistant
 cd Fraud_assistant
 pip install -r requirements.txt
 ```
 
-Add a `.env` file with your Groq API key:
+Create a `.env` file:
 ```
 GROQ_API_KEY=your_key_here
 ```
@@ -84,10 +108,22 @@ Get a free key at console.groq.com
 PORT=5001 python3 app.py
 ```
 
-Then open http://127.0.0.1:5001
+Open http://127.0.0.1:5001
 
-## Phase 1
+## 💡 Key Decisions
+
+**Why Groq over OpenAI** — Groq is free for development and Llama 3.3-70B is genuinely capable for this use case. The latency is also very low which matters for a real time assistant.
+
+**Why Render over Vercel** — Flask needs a persistent server process. Vercel is serverless and does not work for a Flask app that loads a 3MB model at startup.
+
+**Why undersampling over scale_pos_weight** — Undersampling gave significantly better AUC-PR on this dataset. The 90:1 class imbalance meant scale_pos_weight was overcorrecting and hurting precision.
+
+**Why flag rather than verdict** — The model has 0.55 AUC-PR on balanced data. Presenting its output as a hard verdict would be dishonest. Flagging for review is how real fraud systems work and is the right framing here.
+
+## 📓 Phase 1
 
 This is Phase 2 of a two phase project. Phase 1 was competing on the IEEE-CIS Fraud Detection Kaggle competition where I built 6 notebooks covering EDA, feature engineering, modeling, tuning, and SHAP interpretability, ending with a public score of 0.8495.
 
 [Phase 1 Notebooks](https://github.com/Divyansh21k/Fraud_detection_ml)
+
+Made with ❤️ by Divyansh Kharnal
