@@ -4,288 +4,575 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FraudGuard — Intelligent Fraud Detection</title>
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@300;400;500;600&family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
-            --bg: #0d0d0d;
-            --surface: #141414;
-            --surface2: #1a1a1a;
-            --border: #2a2a2a;
-            --border2: #333;
-            --orange: #ff6600;
-            --orange-dim: rgba(255,102,0,0.08);
-            --orange-glow: rgba(255,102,0,0.2);
-            --green: #00cc44;
-            --red: #cc2200;
-            --yellow: #ffcc00;
-            --text: #e0e0e0;
-            --text-dim: #666;
-            --text-muted: #333;
-            --mono: 'IBM Plex Mono', monospace;
-            --sans: 'IBM Plex Sans', sans-serif;
+            --bg: #080c14;
+            --bg2: #0d1220;
+            --surface: #111827;
+            --surface2: #1a2235;
+            --surface3: #1e2a42;
+            --border: #1e2d47;
+            --border2: #243455;
+            --navy: #1e40af;
+            --navy-bright: #3b82f6;
+            --navy-dim: rgba(59,130,246,0.08);
+            --navy-glow: rgba(59,130,246,0.15);
+            --green: #10b981;
+            --green-dim: rgba(16,185,129,0.1);
+            --red: #ef4444;
+            --red-dim: rgba(239,68,68,0.1);
+            --yellow: #f59e0b;
+            --text: #e2e8f0;
+            --text-dim: #64748b;
+            --text-muted: #334155;
+            --mono: 'Geist Mono', monospace;
+            --sans: 'Geist', sans-serif;
+            --radius: 8px;
+            --radius-sm: 6px;
         }
-        body { background:var(--bg); color:var(--text); font-family:var(--mono); height:100vh; display:flex; flex-direction:column; overflow:hidden; font-size:13px; }
-        .topbar { background:var(--surface); border-bottom:1px solid var(--orange); padding:0 20px; display:flex; align-items:center; justify-content:space-between; height:44px; flex-shrink:0; }
-        .topbar-left { display:flex; align-items:center; gap:20px; }
-        .brand { display:flex; align-items:center; gap:10px; }
-        .brand-name { font-family:var(--sans); font-weight:600; font-size:15px; letter-spacing:0.5px; color:var(--orange); }
-        .brand-divider { width:1px; height:20px; background:var(--border2); }
-        .brand-sub { font-size:10px; color:var(--text-dim); letter-spacing:2px; text-transform:uppercase; }
-        .topbar-nav { display:flex; height:44px; }
-        .nav-item { padding:0 16px; display:flex; align-items:center; font-size:11px; letter-spacing:1px; text-transform:uppercase; color:var(--text-dim); cursor:pointer; border-right:1px solid var(--border); transition:all 0.15s; user-select:none; }
-        .nav-item:hover { color:var(--orange); background:var(--orange-dim); }
-        .nav-item.active { color:var(--orange); background:var(--orange-dim); border-bottom:2px solid var(--orange); }
-        .topbar-right { display:flex; align-items:center; gap:16px; }
-        .status-dot { width:6px; height:6px; border-radius:50%; background:var(--green); box-shadow:0 0 6px var(--green); animation:blink 2s ease infinite; }
-        .status-text { font-size:10px; color:var(--text-dim); letter-spacing:1px; }
-        .time-display { font-size:11px; color:var(--text-dim); }
-        .layout { flex:1; display:flex; overflow:hidden; position:relative; }
-        .sidebar { width:220px; background:var(--surface); border-right:1px solid var(--border); display:flex; flex-direction:column; flex-shrink:0; }
-        .sidebar-header { padding:12px 16px; border-bottom:1px solid var(--border); font-size:9px; letter-spacing:2px; text-transform:uppercase; color:var(--text-dim); }
-        .sidebar-section { padding:12px 0; border-bottom:1px solid var(--border); }
-        .sidebar-label { padding:0 16px 8px; font-size:9px; letter-spacing:2px; text-transform:uppercase; color:var(--text-muted); }
-        .feature-btn { width:100%; background:none; border:none; color:var(--text-dim); font-family:var(--mono); font-size:11px; padding:8px 16px; text-align:left; cursor:pointer; display:flex; align-items:center; gap:10px; transition:all 0.15s; letter-spacing:0.3px; }
-        .feature-btn:hover { color:var(--orange); background:var(--orange-dim); }
-        .feature-btn .btn-key { font-size:9px; color:var(--text-muted); border:1px solid var(--text-muted); padding:1px 5px; border-radius:3px; margin-left:auto; }
-        .feature-btn:hover .btn-key { color:var(--orange); border-color:var(--orange); }
-        .risk-panel { margin-top:auto; border-top:1px solid var(--border); }
-        .risk-panel-header { padding:10px 16px; font-size:9px; letter-spacing:2px; text-transform:uppercase; color:var(--text-dim); border-bottom:1px solid var(--border); }
-        .risk-display { padding:16px; display:none; }
-        .risk-display.visible { display:block; }
-        .risk-score { font-family:var(--sans); font-weight:600; font-size:36px; line-height:1; margin-bottom:4px; }
-        .risk-score.low { color:var(--green); }
-        .risk-score.medium { color:var(--yellow); }
-        .risk-score.high, .risk-score.critical { color:var(--red); }
-        .risk-verdict { font-size:10px; letter-spacing:2px; text-transform:uppercase; margin-bottom:12px; }
-        .risk-bar-track { height:2px; background:var(--border2); margin-bottom:12px; }
-        .risk-bar-fill { height:100%; transition:width 0.6s ease; }
-        .risk-bar-fill.low { background:var(--green); }
-        .risk-bar-fill.medium { background:var(--yellow); }
-        .risk-bar-fill.high, .risk-bar-fill.critical { background:var(--red); }
-        .risk-flag-list { display:flex; flex-direction:column; gap:4px; }
-        .risk-flag-item { font-size:10px; color:var(--text-dim); display:flex; gap:6px; align-items:flex-start; }
-        .risk-flag-item::before { content:'!'; color:var(--red); font-weight:600; flex-shrink:0; }
-        .no-analysis { padding:16px; font-size:10px; color:var(--text-muted); line-height:1.6; }
-        .chat-panel { flex:1; display:flex; flex-direction:column; overflow:hidden; }
-        .chat-header { padding:10px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; background:var(--surface); flex-shrink:0; }
-        .chat-title { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--text-dim); }
-        .chat-controls { display:flex; gap:8px; }
-        .ctrl-btn { background:none; border:1px solid var(--border); color:var(--text-dim); font-family:var(--mono); font-size:10px; padding:4px 10px; cursor:pointer; letter-spacing:1px; transition:all 0.15s; }
-        .ctrl-btn:hover { border-color:var(--orange); color:var(--orange); background:var(--orange-dim); }
-        .messages { flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:0; }
-        .messages::-webkit-scrollbar { width:3px; }
-        .messages::-webkit-scrollbar-thumb { background:var(--border2); }
-        .welcome { display:flex; flex-direction:column; justify-content:center; height:100%; padding:20px; opacity:0; animation:fadeIn 0.5s ease forwards 0.2s; }
-        .welcome-tag { font-size:9px; letter-spacing:3px; text-transform:uppercase; color:var(--orange); margin-bottom:16px; }
-        .welcome-title { font-family:var(--sans); font-size:28px; font-weight:300; line-height:1.3; margin-bottom:16px; }
-        .welcome-title strong { font-weight:600; color:var(--orange); }
-        .welcome-desc { font-size:12px; color:var(--text-dim); line-height:1.8; max-width:560px; margin-bottom:24px; font-family:var(--sans); }
-        .welcome-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:1px; background:var(--border); border:1px solid var(--border); max-width:560px; }
-        .welcome-card { background:var(--surface); padding:14px 16px; }
-        .welcome-card-title { font-size:11px; color:var(--orange); margin-bottom:4px; }
-        .welcome-card-desc { font-size:10px; color:var(--text-dim); line-height:1.6; font-family:var(--sans); }
-        .message { display:flex; flex-direction:column; margin-bottom:12px; opacity:0; animation:slideIn 0.2s ease forwards; }
-        .message-role { font-size:9px; letter-spacing:2px; text-transform:uppercase; margin-bottom:4px; padding:0 4px; }
-        .message.user .message-role { color:var(--text-dim); }
-        .message.assistant .message-role { color:var(--orange); }
-        .message-time-small { font-size:9px; color:var(--text-muted); margin-top:4px; padding:0 4px; }
-        .message-body { padding:12px 16px; line-height:1.7; font-size:13px; white-space:pre-wrap; border-radius:4px; }
-        .message.user .message-body { background:var(--surface2); border:1px solid var(--border2); color:var(--text-dim); }
-        .message.assistant .message-body { background:transparent; border-left:2px solid var(--orange); padding-left:16px; color:var(--text); }
-        .typing-indicator { display:flex; margin-bottom:1px; }
-        .typing-prefix { width:120px; flex-shrink:0; padding:12px 14px 12px 0; text-align:right; font-size:10px; letter-spacing:1px; color:var(--orange); text-transform:uppercase; }
-        .typing-body { flex:1; padding:12px 16px; border-left:2px solid var(--orange); display:flex; align-items:center; gap:4px; }
-        .typing-dot { width:4px; height:4px; border-radius:50%; background:var(--orange); animation:blink 1.2s ease infinite; }
-        .typing-dot:nth-child(2) { animation-delay:0.2s; }
-        .typing-dot:nth-child(3) { animation-delay:0.4s; }
-        .input-section { border-top:1px solid var(--border); background:var(--surface); flex-shrink:0; }
-        .image-preview-bar { display:none; padding:8px 20px; border-bottom:1px solid var(--border); align-items:center; gap:10px; background:var(--orange-dim); }
-        .image-preview-bar.visible { display:flex; }
-        .image-preview-bar img { height:40px; border:1px solid var(--orange); }
-        .image-preview-bar span { font-size:10px; color:var(--orange); letter-spacing:1px; }
-        .remove-img-btn { background:none; border:1px solid var(--border2); color:var(--text-dim); font-size:10px; padding:2px 8px; cursor:pointer; font-family:var(--mono); margin-left:auto; transition:all 0.15s; }
-        .remove-img-btn:hover { border-color:var(--red); color:var(--red); }
-        .input-row { display:flex; align-items:flex-end; }
-        .input-label { padding:14px 16px; font-size:10px; color:var(--orange); letter-spacing:1px; text-transform:uppercase; flex-shrink:0; border-right:1px solid var(--border); align-self:stretch; display:flex; align-items:center; }
-        #messageInput { flex:1; background:none; border:none; color:var(--text); font-family:var(--mono); font-size:13px; padding:14px 16px; resize:none; outline:none; min-height:48px; max-height:120px; line-height:1.5; }
-        #messageInput::placeholder { color:var(--text-muted); }
-        .input-controls { display:flex; align-items:center; padding:0 12px; border-left:1px solid var(--border); align-self:stretch; }
-        .input-ctrl-btn { background:none; border:none; color:var(--text-dim); font-size:14px; cursor:pointer; padding:8px; transition:color 0.15s; }
-        .input-ctrl-btn:hover { color:var(--orange); }
-        .submit-btn { background:var(--orange); border:none; color:var(--bg); font-family:var(--mono); font-size:11px; font-weight:600; letter-spacing:2px; padding:0 20px; cursor:pointer; align-self:stretch; transition:all 0.15s; text-transform:uppercase; }
-        .submit-btn:hover { background:#ff8833; }
-        .submit-btn:disabled { opacity:0.3; cursor:not-allowed; }
-        .input-footer { padding:6px 16px 10px; font-size:9px; color:var(--text-muted); letter-spacing:0.5px; }
 
-        /* OVERLAY PANELS */
-        .overlay-panel { position:absolute; top:0; right:0; bottom:0; width:420px; background:var(--surface); border-left:1px solid var(--border); display:flex; flex-direction:column; transform:translateX(100%); transition:transform 0.25s ease; z-index:100; }
-        .overlay-panel.open { transform:translateX(0); }
-        .overlay-header { padding:14px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
-        .overlay-title { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--orange); }
-        .overlay-close { background:none; border:1px solid var(--border); color:var(--text-dim); font-family:var(--mono); font-size:10px; padding:4px 10px; cursor:pointer; transition:all 0.15s; }
-        .overlay-close:hover { border-color:var(--orange); color:var(--orange); }
-        .overlay-body { flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:12px; }
-        .overlay-body::-webkit-scrollbar { width:3px; }
-        .overlay-body::-webkit-scrollbar-thumb { background:var(--border2); }
-        .overlay-empty { font-size:11px; color:var(--text-muted); text-align:center; margin-top:40px; line-height:2; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--sans);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            font-size: 14px;
+        }
 
-        /* HISTORY */
-        .history-item { border:1px solid var(--border); background:var(--bg); cursor:pointer; transition:border-color 0.15s; }
-        .history-item:hover { border-color:var(--border2); }
-        .history-item-header { padding:10px 14px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
-        .history-item-time { font-size:9px; color:var(--text-dim); letter-spacing:1px; }
-        .history-item-badge { font-size:9px; padding:2px 8px; letter-spacing:1px; text-transform:uppercase; }
-        .history-item-badge.fraud { background:rgba(204,34,0,0.15); color:var(--red); border:1px solid rgba(204,34,0,0.3); }
-        .history-item-badge.legitimate { background:rgba(0,204,68,0.1); color:var(--green); border:1px solid rgba(0,204,68,0.3); }
-        .history-item-badge.info { background:var(--orange-dim); color:var(--orange); border:1px solid rgba(255,102,0,0.2); }
-        .history-item-body { padding:12px 14px; }
-        .history-item-user { font-size:11px; color:var(--text-dim); margin-bottom:8px; line-height:1.5; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
-        .history-item-response { font-size:11px; color:var(--text); line-height:1.6; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
-        .history-item-score { margin-top:10px; padding-top:10px; border-top:1px solid var(--border); font-size:10px; color:var(--text-dim); display:flex; align-items:center; gap:8px; }
-        .history-score-val { font-weight:600; }
-        .history-score-val.low { color:var(--green); }
-        .history-score-val.high, .history-score-val.critical { color:var(--red); }
-        .history-score-val.medium { color:var(--yellow); }
+        .topbar {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 52px;
+            flex-shrink: 0;
+            position: relative;
+            z-index: 50;
+        }
+        .topbar::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--navy-bright), transparent);
+            opacity: 0.3;
+        }
 
-        /* REPORTS */
-        .report-section { border:1px solid var(--border); background:var(--bg); }
-        .report-section-header { padding:10px 14px; border-bottom:1px solid var(--border); font-size:9px; letter-spacing:2px; text-transform:uppercase; color:var(--orange); }
-        .report-section-body { padding:14px; }
-        .report-row { display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid var(--border); font-size:11px; }
-        .report-row:last-child { border-bottom:none; }
-        .report-row-label { color:var(--text-dim); }
-        .report-row-value { color:var(--text); font-weight:500; }
-        .report-row-value.danger { color:var(--red); }
-        .report-row-value.safe { color:var(--green); }
-        .report-row-value.warn { color:var(--yellow); }
-        .report-no-data { font-size:11px; color:var(--text-muted); text-align:center; margin-top:40px; line-height:2; }
-        .report-verdict-banner { padding:16px; margin-bottom:12px; display:flex; align-items:center; gap:12px; }
-        .report-verdict-banner.fraud { background:rgba(204,34,0,0.1); border:1px solid rgba(204,34,0,0.3); }
-        .report-verdict-banner.legitimate { background:rgba(0,204,68,0.08); border:1px solid rgba(0,204,68,0.2); }
-        .report-verdict-icon { font-size:24px; }
-        .report-verdict-text { font-size:13px; font-weight:600; letter-spacing:1px; }
-        .report-verdict-text.fraud { color:var(--red); }
-        .report-verdict-text.legitimate { color:var(--green); }
-        .report-verdict-sub { font-size:10px; color:var(--text-dim); margin-top:2px; }
-        .report-flags { display:flex; flex-direction:column; gap:6px; }
-        .report-flag { font-size:11px; color:var(--text-dim); display:flex; gap:8px; align-items:flex-start; padding:6px 0; border-bottom:1px solid var(--border); }
-        .report-flag:last-child { border-bottom:none; }
-        .report-flag-dot { color:var(--red); font-weight:700; flex-shrink:0; }
-        .report-timestamp { font-size:10px; color:var(--text-muted); text-align:right; margin-top:12px; padding-top:12px; border-top:1px solid var(--border); }
+        .topbar-left { display: flex; align-items: center; gap: 24px; }
+        .brand { display: flex; align-items: center; gap: 10px; }
+        .brand-icon {
+            width: 32px; height: 32px;
+            background: linear-gradient(135deg, var(--navy), var(--navy-bright));
+            border-radius: var(--radius-sm);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 700; color: white;
+            font-family: var(--mono); letter-spacing: -0.5px;
+        }
+        .brand-name { font-weight: 600; font-size: 15px; color: var(--text); letter-spacing: -0.3px; }
+        .brand-badge {
+            font-size: 10px; color: var(--navy-bright);
+            background: var(--navy-dim);
+            border: 1px solid rgba(59,130,246,0.2);
+            padding: 2px 7px; border-radius: 20px;
+            font-family: var(--mono);
+        }
 
-        @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes slideIn { from{opacity:0} to{opacity:1} }
-        @keyframes blink { 0%,60%,100%{opacity:0.3} 30%{opacity:1} }
+        .topbar-nav { display: flex; gap: 2px; }
+        .nav-item {
+            padding: 6px 14px; font-size: 13px; color: var(--text-dim);
+            cursor: pointer; border-radius: var(--radius-sm);
+            transition: all 0.15s; user-select: none; font-weight: 500;
+        }
+        .nav-item:hover { color: var(--text); background: var(--surface2); }
+        .nav-item.active { color: var(--navy-bright); background: var(--navy-dim); }
+
+        .topbar-right { display: flex; align-items: center; gap: 12px; }
+        .status-pill {
+            display: flex; align-items: center; gap: 6px;
+            background: var(--green-dim);
+            border: 1px solid rgba(16,185,129,0.2);
+            padding: 4px 10px; border-radius: 20px;
+        }
+        .status-dot {
+            width: 6px; height: 6px; border-radius: 50%;
+            background: var(--green); box-shadow: 0 0 8px var(--green);
+            animation: pulse 2s ease infinite;
+        }
+        .status-text { font-size: 11px; color: var(--green); font-weight: 500; }
+        .time-display { font-size: 12px; color: var(--text-dim); font-family: var(--mono); }
+
+        .mobile-menu-btn {
+            display: none;
+            background: none; border: 1px solid var(--border);
+            color: var(--text-dim); padding: 6px 10px;
+            border-radius: var(--radius-sm); cursor: pointer;
+            font-size: 16px; transition: all 0.15s;
+        }
+        .mobile-menu-btn:hover { color: var(--text); }
+
+        .layout { flex: 1; display: flex; overflow: hidden; position: relative; }
+
+        .sidebar {
+            width: 240px;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex; flex-direction: column;
+            flex-shrink: 0;
+            transition: transform 0.25s ease;
+        }
+
+        .sidebar-section-label {
+            font-size: 10px; font-weight: 600;
+            letter-spacing: 1px; text-transform: uppercase;
+            color: var(--text-muted);
+            padding: 0 12px; margin-bottom: 4px; margin-top: 16px;
+        }
+        .sidebar-section-label:first-child { margin-top: 8px; }
+
+        .sidebar-btn {
+            width: calc(100% - 8px);
+            background: none; border: none;
+            color: var(--text-dim);
+            font-family: var(--sans); font-size: 13px; font-weight: 500;
+            padding: 8px 12px; text-align: left; cursor: pointer;
+            display: flex; align-items: center; gap: 10px;
+            transition: all 0.15s; border-radius: var(--radius-sm);
+            margin: 1px 4px;
+        }
+        .sidebar-btn:hover { color: var(--text); background: var(--surface2); }
+        .sidebar-btn.active { color: var(--navy-bright); background: var(--navy-dim); }
+        .sidebar-btn-icon { font-size: 14px; width: 18px; text-align: center; flex-shrink: 0; }
+
+        .result-panel { margin-top: auto; border-top: 1px solid var(--border); padding: 16px; }
+        .result-panel-title {
+            font-size: 11px; font-weight: 600;
+            letter-spacing: 0.5px; text-transform: uppercase;
+            color: var(--text-muted); margin-bottom: 12px;
+        }
+        .result-card {
+            background: var(--bg2); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 12px; display: none;
+        }
+        .result-card.visible { display: block; }
+        .result-prob { font-family: var(--mono); font-size: 28px; font-weight: 600; line-height: 1; margin-bottom: 4px; }
+        .result-prob.low { color: var(--green); }
+        .result-prob.medium { color: var(--yellow); }
+        .result-prob.high, .result-prob.critical { color: var(--red); }
+        .result-verdict { font-size: 11px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 10px; color: var(--text-dim); }
+        .result-bar-track { height: 3px; background: var(--surface3); border-radius: 2px; margin-bottom: 10px; }
+        .result-bar-fill { height: 100%; border-radius: 2px; transition: width 0.6s ease; }
+        .result-bar-fill.low { background: var(--green); }
+        .result-bar-fill.medium { background: var(--yellow); }
+        .result-bar-fill.high, .result-bar-fill.critical { background: var(--red); }
+        .result-flags { display: flex; flex-direction: column; gap: 3px; }
+        .result-flag { font-size: 11px; color: var(--text-dim); display: flex; gap: 6px; align-items: flex-start; }
+        .result-flag-dot { color: var(--red); font-size: 10px; flex-shrink: 0; }
+        .result-empty { font-size: 12px; color: var(--text-muted); line-height: 1.6; }
+
+        .chat-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+
+        .chat-header {
+            padding: 14px 20px; border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between;
+            background: var(--surface); flex-shrink: 0;
+        }
+        .chat-title { font-size: 13px; font-weight: 600; color: var(--text); }
+        .chat-subtitle { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+        .chat-actions { display: flex; gap: 6px; }
+        .action-btn {
+            background: none; border: 1px solid var(--border);
+            color: var(--text-dim); font-family: var(--sans);
+            font-size: 12px; font-weight: 500; padding: 5px 12px;
+            cursor: pointer; border-radius: var(--radius-sm); transition: all 0.15s;
+        }
+        .action-btn:hover { border-color: var(--border2); color: var(--text); background: var(--surface2); }
+
+        .messages {
+            flex: 1; overflow-y: auto; padding: 24px 20px;
+            display: flex; flex-direction: column; gap: 4px;
+        }
+        .messages::-webkit-scrollbar { width: 4px; }
+        .messages::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+        .welcome {
+            display: flex; flex-direction: column; justify-content: center;
+            height: 100%; max-width: 580px;
+            opacity: 0; animation: fadeUp 0.5s ease forwards 0.1s;
+        }
+        .welcome-eyebrow {
+            font-size: 11px; font-weight: 600; letter-spacing: 1.5px;
+            text-transform: uppercase; color: var(--navy-bright);
+            margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
+        }
+        .welcome-eyebrow::before {
+            content: ''; display: inline-block;
+            width: 20px; height: 2px; background: var(--navy-bright); border-radius: 1px;
+        }
+        .welcome-title {
+            font-size: 30px; font-weight: 700; line-height: 1.2;
+            margin-bottom: 14px; letter-spacing: -0.5px; color: var(--text);
+        }
+        .welcome-title span { color: var(--navy-bright); }
+        .welcome-desc { font-size: 14px; color: var(--text-dim); line-height: 1.7; margin-bottom: 28px; max-width: 480px; }
+        .welcome-cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; max-width: 520px; }
+        .welcome-card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 14px 16px; transition: border-color 0.15s;
+        }
+        .welcome-card:hover { border-color: var(--border2); }
+        .welcome-card-icon { font-size: 18px; margin-bottom: 8px; }
+        .welcome-card-title { font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+        .welcome-card-desc { font-size: 11px; color: var(--text-dim); line-height: 1.5; }
+
+        .message { display: flex; flex-direction: column; margin-bottom: 16px; opacity: 0; animation: fadeUp 0.2s ease forwards; }
+        .message-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+        .message-avatar {
+            width: 24px; height: 24px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 11px; font-weight: 700; flex-shrink: 0;
+        }
+        .message.user .message-avatar { background: var(--surface3); color: var(--text-dim); }
+        .message.assistant .message-avatar { background: linear-gradient(135deg, var(--navy), var(--navy-bright)); color: white; }
+        .message-name { font-size: 12px; font-weight: 600; color: var(--text-dim); }
+        .message-time { font-size: 11px; color: var(--text-muted); font-family: var(--mono); }
+        .message-body {
+            padding: 12px 16px; border-radius: var(--radius);
+            line-height: 1.7; font-size: 14px; white-space: pre-wrap;
+            max-width: 85%; margin-left: 32px;
+        }
+        .message.user .message-body { background: var(--surface2); border: 1px solid var(--border); color: var(--text); }
+        .message.assistant .message-body { background: var(--bg2); border: 1px solid var(--border); border-left: 2px solid var(--navy-bright); color: var(--text); }
+
+        .typing-indicator { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; margin-left: 32px; }
+        .typing-dots {
+            display: flex; gap: 4px; background: var(--bg2);
+            border: 1px solid var(--border); border-left: 2px solid var(--navy-bright);
+            padding: 10px 14px; border-radius: var(--radius);
+        }
+        .typing-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--navy-bright); animation: bounce 1.2s ease infinite; }
+        .typing-dot:nth-child(2) { animation-delay: 0.15s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.3s; }
+
+        .input-section { border-top: 1px solid var(--border); background: var(--surface); flex-shrink: 0; padding: 16px 20px; }
+        .image-preview-bar {
+            display: none; align-items: center; gap: 10px;
+            background: var(--navy-dim); border: 1px solid rgba(59,130,246,0.2);
+            border-radius: var(--radius); padding: 8px 12px; margin-bottom: 10px;
+        }
+        .image-preview-bar.visible { display: flex; }
+        .image-preview-bar img { height: 36px; border-radius: 4px; }
+        .image-preview-bar span { font-size: 11px; color: var(--navy-bright); font-weight: 500; flex: 1; }
+        .remove-img-btn {
+            background: none; border: 1px solid var(--border2);
+            color: var(--text-dim); font-size: 11px; padding: 3px 8px;
+            cursor: pointer; font-family: var(--sans); border-radius: var(--radius-sm); transition: all 0.15s;
+        }
+        .remove-img-btn:hover { border-color: var(--red); color: var(--red); }
+
+        .input-box {
+            background: var(--bg2); border: 1px solid var(--border2);
+            border-radius: var(--radius); transition: all 0.15s; overflow: hidden;
+        }
+        .input-box:focus-within { border-color: var(--navy-bright); box-shadow: 0 0 0 3px rgba(59,130,246,0.08); }
+        .input-top { display: flex; align-items: flex-end; }
+        #messageInput {
+            flex: 1; background: none; border: none; color: var(--text);
+            font-family: var(--sans); font-size: 14px; padding: 14px 16px;
+            resize: none; outline: none; min-height: 50px; max-height: 140px; line-height: 1.5;
+        }
+        #messageInput::placeholder { color: var(--text-muted); }
+        .input-actions { display: flex; align-items: center; gap: 4px; padding: 8px 10px; }
+        .input-icon-btn {
+            background: none; border: none; color: var(--text-dim);
+            font-size: 15px; cursor: pointer; padding: 6px;
+            border-radius: var(--radius-sm); transition: all 0.15s;
+        }
+        .input-icon-btn:hover { color: var(--navy-bright); background: var(--navy-dim); }
+        .send-btn {
+            background: var(--navy-bright); border: none; color: white;
+            font-family: var(--sans); font-size: 13px; font-weight: 600;
+            padding: 8px 18px; cursor: pointer; border-radius: var(--radius-sm); transition: all 0.15s;
+        }
+        .send-btn:hover { background: #2563eb; }
+        .send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .input-footer { display: flex; align-items: center; justify-content: space-between; padding: 8px 4px 0; }
+        .input-hint { font-size: 11px; color: var(--text-muted); }
+        .input-mode-badge {
+            font-size: 10px; font-weight: 600; letter-spacing: 0.5px;
+            color: var(--navy-bright); background: var(--navy-dim);
+            border: 1px solid rgba(59,130,246,0.2);
+            padding: 2px 8px; border-radius: 20px; text-transform: uppercase;
+        }
+
+        .overlay-panel {
+            position: absolute; top: 0; right: 0; bottom: 0; width: 400px;
+            background: var(--surface); border-left: 1px solid var(--border);
+            display: flex; flex-direction: column;
+            transform: translateX(100%);
+            transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 40;
+        }
+        .overlay-panel.open { transform: translateX(0); }
+        .overlay-header {
+            padding: 16px 20px; border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+        }
+        .overlay-title { font-size: 14px; font-weight: 600; color: var(--text); }
+        .overlay-subtitle { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+        .overlay-close {
+            background: none; border: 1px solid var(--border); color: var(--text-dim);
+            font-family: var(--sans); font-size: 12px; font-weight: 500;
+            padding: 5px 10px; cursor: pointer; border-radius: var(--radius-sm); transition: all 0.15s;
+        }
+        .overlay-close:hover { border-color: var(--border2); color: var(--text); }
+        .overlay-body { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+        .overlay-body::-webkit-scrollbar { width: 4px; }
+        .overlay-body::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+        .overlay-empty { font-size: 13px; color: var(--text-muted); text-align: center; margin-top: 60px; line-height: 2; }
+
+        .history-item { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; cursor: pointer; transition: border-color 0.15s; }
+        .history-item:hover { border-color: var(--border2); }
+        .history-item-header { padding: 10px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+        .history-item-time { font-size: 11px; color: var(--text-dim); font-family: var(--mono); }
+        .history-badge { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .history-badge.fraud { background: var(--red-dim); color: var(--red); border: 1px solid rgba(239,68,68,0.2); }
+        .history-badge.legitimate { background: var(--green-dim); color: var(--green); border: 1px solid rgba(16,185,129,0.2); }
+        .history-badge.info { background: var(--navy-dim); color: var(--navy-bright); border: 1px solid rgba(59,130,246,0.2); }
+        .history-item-body { padding: 12px 14px; }
+        .history-user-msg { font-size: 12px; color: var(--text-dim); margin-bottom: 6px; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .history-response { font-size: 12px; color: var(--text); line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+        .history-score { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--text-dim); }
+        .history-score-val { font-weight: 700; font-family: var(--mono); }
+        .history-score-val.low { color: var(--green); }
+        .history-score-val.high, .history-score-val.critical { color: var(--red); }
+        .history-score-val.medium { color: var(--yellow); }
+
+        .report-verdict { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; display: flex; align-items: center; gap: 14px; }
+        .report-verdict.fraud { border-color: rgba(239,68,68,0.3); background: var(--red-dim); }
+        .report-verdict.legitimate { border-color: rgba(16,185,129,0.3); background: var(--green-dim); }
+        .report-verdict-icon { font-size: 28px; }
+        .report-verdict-label { font-size: 16px; font-weight: 700; }
+        .report-verdict-label.fraud { color: var(--red); }
+        .report-verdict-label.legitimate { color: var(--green); }
+        .report-verdict-sub { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+        .report-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+        .report-card-header { padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: 11px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; color: var(--text-dim); }
+        .report-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 14px; border-bottom: 1px solid var(--border); font-size: 13px; }
+        .report-row:last-child { border-bottom: none; }
+        .report-row-label { color: var(--text-dim); }
+        .report-row-value { font-weight: 600; font-family: var(--mono); font-size: 12px; }
+        .report-row-value.safe { color: var(--green); }
+        .report-row-value.danger { color: var(--red); }
+        .report-row-value.warn { color: var(--yellow); }
+        .report-flag-item { display: flex; gap: 8px; align-items: flex-start; padding: 8px 14px; border-bottom: 1px solid var(--border); font-size: 12px; color: var(--text-dim); }
+        .report-flag-item:last-child { border-bottom: none; }
+        .report-flag-dot { color: var(--red); font-weight: 700; flex-shrink: 0; }
+        .report-disclaimer { font-size: 11px; color: var(--text-muted); line-height: 1.7; padding: 12px 14px; }
+        .report-timestamp { font-size: 11px; color: var(--text-muted); text-align: right; font-family: var(--mono); }
+
+        .sidebar-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 29; }
+
+        @media (max-width: 768px) {
+            .topbar { padding: 0 14px; }
+            .brand-badge { display: none; }
+            .topbar-nav { display: none; }
+            .time-display { display: none; }
+            .mobile-menu-btn { display: flex; align-items: center; }
+            .sidebar { position: fixed; left: 0; top: 52px; bottom: 0; z-index: 30; transform: translateX(-100%); box-shadow: 4px 0 20px rgba(0,0,0,0.4); }
+            .sidebar.mobile-open { transform: translateX(0); }
+            .sidebar-backdrop.visible { display: block; }
+            .chat-panel { width: 100%; }
+            .overlay-panel { width: 100%; }
+            .messages { padding: 16px 14px; }
+            .message-body { max-width: 95%; font-size: 13px; }
+            .welcome-title { font-size: 24px; }
+            .welcome-cards { grid-template-columns: 1fr; }
+            .input-section { padding: 12px 14px; }
+            .chat-header { padding: 12px 14px; }
+        }
+
+        @media (max-width: 480px) {
+            .status-text { display: none; }
+            .welcome-title { font-size: 20px; }
+        }
+
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
+        @keyframes bounce { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-4px); } }
     </style>
 </head>
 <body>
+
 <div class="topbar">
     <div class="topbar-left">
         <div class="brand">
-            <div class="brand-name">FRAUDGUARD</div>
-            <div class="brand-divider"></div>
-            <div class="brand-sub">Intelligent Fraud Detection System</div>
+            <div class="brand-icon">FG</div>
+            <div class="brand-name">FraudGuard</div>
+            <div class="brand-badge">v2.0</div>
         </div>
-        <div class="topbar-nav">
+        <nav class="topbar-nav">
             <div class="nav-item active" id="navAnalysis" onclick="switchView('analysis')">Analysis</div>
             <div class="nav-item" id="navHistory" onclick="switchView('history')">History</div>
             <div class="nav-item" id="navReports" onclick="switchView('reports')">Reports</div>
-        </div>
+        </nav>
     </div>
     <div class="topbar-right">
-        <div class="status-dot"></div>
-        <div class="status-text">MODEL ACTIVE</div>
-        <div class="brand-divider"></div>
+        <div class="status-pill">
+            <div class="status-dot"></div>
+            <div class="status-text">Model Active</div>
+        </div>
         <div class="time-display" id="clock">--:--:--</div>
+        <button class="mobile-menu-btn" onclick="toggleMobileSidebar()">☰</button>
     </div>
 </div>
+
+<div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeMobileSidebar()"></div>
+
 <div class="layout">
-    <div class="sidebar">
-        <div class="sidebar-header">Functions</div>
-        <div class="sidebar-section">
-            <div class="sidebar-label">Features</div>
-            <button class="feature-btn" onclick="setMode('transaction')">▸ Transaction Analysis<span class="btn-key">F1</span></button>
-            <button class="feature-btn" onclick="setMode('education')">▸ Fraud Education<span class="btn-key">F2</span></button>
-            <button class="feature-btn" onclick="setMode('prevention')">▸ Prevention Advice<span class="btn-key">F3</span></button>
-            <button class="feature-btn" onclick="setMode('report')">▸ Risk Report<span class="btn-key">F4</span></button>
+    <div class="sidebar" id="sidebar">
+        <div style="padding: 12px 8px; flex: 1; overflow-y: auto;">
+            <div class="sidebar-section-label">Analyse</div>
+            <button class="sidebar-btn active" id="btnTransaction" onclick="setMode('transaction')">
+                <span class="sidebar-btn-icon">🔍</span> Transaction Analysis
+            </button>
+            <button class="sidebar-btn" id="btnEducation" onclick="setMode('education')">
+                <span class="sidebar-btn-icon">📚</span> Fraud Education
+            </button>
+            <button class="sidebar-btn" id="btnPrevention" onclick="setMode('prevention')">
+                <span class="sidebar-btn-icon">🛡️</span> Prevention Advice
+            </button>
+            <button class="sidebar-btn" id="btnReport" onclick="setMode('report')">
+                <span class="sidebar-btn-icon">📊</span> Risk Report
+            </button>
+
+            <div class="sidebar-section-label">Tools</div>
+            <button class="sidebar-btn" onclick="document.getElementById('imageInput').click()">
+                <span class="sidebar-btn-icon">📎</span> Upload Screenshot
+            </button>
+            <button class="sidebar-btn" onclick="switchView('history')">
+                <span class="sidebar-btn-icon">🕐</span> Session History
+            </button>
+            <button class="sidebar-btn" onclick="switchView('reports')">
+                <span class="sidebar-btn-icon">📋</span> View Report
+            </button>
+
+            <div class="sidebar-section-label">Session</div>
+            <button class="sidebar-btn" onclick="exportChat()">
+                <span class="sidebar-btn-icon">⬇️</span> Export Session
+            </button>
+            <button class="sidebar-btn" onclick="clearChat()" style="color: var(--red);">
+                <span class="sidebar-btn-icon">🗑️</span> Clear Session
+            </button>
         </div>
-        <div class="sidebar-section">
-            <div class="sidebar-label">Actions</div>
-            <button class="feature-btn" onclick="document.getElementById('imageInput').click()">▸ Upload Screenshot</button>
-            <button class="feature-btn" onclick="clearChat()">▸ Clear Session</button>
-        </div>
-        <div class="risk-panel">
-            <div class="risk-panel-header">Last Result</div>
-            <div class="risk-display" id="riskDisplay">
-                <div class="risk-score" id="riskScore">--</div>
-                <div class="risk-verdict" id="riskVerdict">--</div>
-                <div class="risk-bar-track"><div class="risk-bar-fill" id="riskBarFill" style="width:0%"></div></div>
-                <div class="risk-flag-list" id="riskFlagList"></div>
+
+        <div class="result-panel">
+            <div class="result-panel-title">Last Result</div>
+            <div class="result-card" id="resultCard">
+                <div class="result-prob" id="resultProb">--</div>
+                <div class="result-verdict" id="resultVerdict">--</div>
+                <div class="result-bar-track"><div class="result-bar-fill" id="resultBar" style="width:0%"></div></div>
+                <div class="result-flags" id="resultFlags"></div>
             </div>
-            <div class="no-analysis" id="noAnalysis">No transaction analysed yet. Describe a payment or upload a screenshot.</div>
+            <div class="result-empty" id="resultEmpty">No transaction analysed yet.</div>
         </div>
     </div>
 
     <div class="chat-panel">
         <div class="chat-header">
-            <div class="chat-title" id="chatTitle">Analysis Terminal</div>
-            <div class="chat-controls">
-                <button class="ctrl-btn" onclick="clearChat()">CLR</button>
-                <button class="ctrl-btn" onclick="exportChat()">EXP</button>
+            <div>
+                <div class="chat-title" id="chatTitle">Analysis Terminal</div>
+                <div class="chat-subtitle" id="chatSubtitle">Describe a transaction to get started</div>
+            </div>
+            <div class="chat-actions">
+                <button class="action-btn" onclick="clearChat()">Clear</button>
+                <button class="action-btn" onclick="exportChat()">Export</button>
             </div>
         </div>
+
         <div class="messages" id="messages">
             <div class="welcome" id="welcome">
-                <div class="welcome-tag">FraudGuard v2.0 — NeurIPS 2022 Dataset</div>
-                <div class="welcome-title">Describe a transaction.<br><strong>Get an instant fraud assessment.</strong></div>
-                <div class="welcome-desc">Powered by an XGBoost model trained on 1,000,000 bank account transactions. Describe any payment in plain English, upload a screenshot, or ask about fraud prevention.</div>
-                <div class="welcome-grid">
-                    <div class="welcome-card"><div class="welcome-card-title">Transaction Analysis</div><div class="welcome-card-desc">Score any transaction with fraud risk flag and model confidence</div></div>
-                    <div class="welcome-card"><div class="welcome-card-title">Fraud Pattern Detection</div><div class="welcome-card-desc">Identify behavioral patterns linked to account fraud</div></div>
-                    <div class="welcome-card"><div class="welcome-card-title">Screenshot Upload</div><div class="welcome-card-desc">Upload a payment notification and get instant analysis</div></div>
-                    <div class="welcome-card"><div class="welcome-card-title">Prevention Advice</div><div class="welcome-card-desc">Specific steps based on the fraud type detected</div></div>
+                <div class="welcome-eyebrow">FraudGuard v2.0</div>
+                <div class="welcome-title">Detect fraud with<br><span>AI-powered analysis</span></div>
+                <div class="welcome-desc">Powered by XGBoost trained on 1,000,000 bank account transactions. Describe any payment in plain English and get an instant risk assessment.</div>
+                <div class="welcome-cards">
+                    <div class="welcome-card">
+                        <div class="welcome-card-icon">🔍</div>
+                        <div class="welcome-card-title">Transaction Analysis</div>
+                        <div class="welcome-card-desc">Score any transaction with fraud probability and risk flags</div>
+                    </div>
+                    <div class="welcome-card">
+                        <div class="welcome-card-icon">📊</div>
+                        <div class="welcome-card-title">Risk Reports</div>
+                        <div class="welcome-card-desc">Structured reports with model confidence and recommendations</div>
+                    </div>
+                    <div class="welcome-card">
+                        <div class="welcome-card-icon">📸</div>
+                        <div class="welcome-card-title">Screenshot Upload</div>
+                        <div class="welcome-card-desc">Upload payment notifications for instant AI analysis</div>
+                    </div>
+                    <div class="welcome-card">
+                        <div class="welcome-card-icon">🛡️</div>
+                        <div class="welcome-card-title">Prevention Advice</div>
+                        <div class="welcome-card-desc">Specific steps to protect against detected fraud types</div>
+                    </div>
                 </div>
             </div>
         </div>
+
         <div class="input-section">
             <div class="image-preview-bar" id="imagePreviewBar">
                 <img id="previewImg" src="" alt="">
-                <span>IMAGE READY FOR ANALYSIS</span>
-                <button class="remove-img-btn" onclick="removeImage()">REMOVE</button>
+                <span>Image ready for analysis</span>
+                <button class="remove-img-btn" onclick="removeImage()">Remove</button>
             </div>
-            <div class="input-row">
-                <div class="input-label" id="inputLabel">INPUT</div>
-                <textarea id="messageInput" placeholder="Describe a transaction or ask about fraud..." rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
-                <div class="input-controls">
-                    <button class="input-ctrl-btn" onclick="document.getElementById('imageInput').click()" title="Upload screenshot">📎</button>
-                    <input type="file" id="imageInput" accept="image/*" style="display:none" onchange="handleImage(event)">
+            <div class="input-box">
+                <div class="input-top">
+                    <textarea id="messageInput" placeholder="Describe a transaction or ask about fraud..." rows="1"
+                        onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+                    <div class="input-actions">
+                        <button class="input-icon-btn" onclick="document.getElementById('imageInput').click()" title="Upload screenshot">📎</button>
+                        <input type="file" id="imageInput" accept="image/*" style="display:none" onchange="handleImage(event)">
+                        <button class="send-btn" id="sendBtn" onclick="send()">Send</button>
+                    </div>
                 </div>
-                <button class="submit-btn" id="sendBtn" onclick="send()">SEND</button>
             </div>
-            <div class="input-footer">ENTER to send · SHIFT+ENTER for new line · F1–F4 to switch mode · 📎 to upload screenshot</div>
+            <div class="input-footer">
+                <div class="input-hint">Enter to send · Shift+Enter for new line</div>
+                <div class="input-mode-badge" id="modeBadge">Analyse</div>
+            </div>
         </div>
     </div>
 
-    <!-- HISTORY PANEL -->
     <div class="overlay-panel" id="historyPanel">
         <div class="overlay-header">
-            <div class="overlay-title">Session History</div>
-            <button class="overlay-close" onclick="switchView('analysis')">✕ CLOSE</button>
+            <div>
+                <div class="overlay-title">Session History</div>
+                <div class="overlay-subtitle">All conversations this session</div>
+            </div>
+            <button class="overlay-close" onclick="switchView('analysis')">Close</button>
         </div>
         <div class="overlay-body" id="historyBody">
             <div class="overlay-empty">No history yet.<br>Start a conversation to see it here.</div>
         </div>
     </div>
 
-    <!-- REPORTS PANEL -->
     <div class="overlay-panel" id="reportsPanel">
         <div class="overlay-header">
-            <div class="overlay-title">Risk Report</div>
-            <button class="overlay-close" onclick="switchView('analysis')">✕ CLOSE</button>
+            <div>
+                <div class="overlay-title">Risk Report</div>
+                <div class="overlay-subtitle">Last analysed transaction</div>
+            </div>
+            <button class="overlay-close" onclick="switchView('analysis')">Close</button>
         </div>
         <div class="overlay-body" id="reportsBody">
-            <div class="report-no-data">No transaction analysed yet.<br>Run an analysis first, then view the report here.</div>
+            <div class="overlay-empty">No transaction analysed yet.<br>Run an analysis first.</div>
         </div>
     </div>
 </div>
@@ -296,47 +583,46 @@
     let sessionHistory = [];
     let lastFraudData = null;
     let lastUserMsg = null;
-    let lastAssistantMsg = null;
 
-    const modeLabels = { transaction:'ANALYSE', education:'LEARN', prevention:'PREVENT', report:'REPORT' };
-    const modePlaceholders = {
-        transaction:'Describe a transaction to analyse...',
-        education:'Ask anything about fraud, scams, or financial security...',
-        prevention:'Describe a situation to get prevention advice...',
-        report:'Describe a transaction to generate a risk report...'
-    };
-    const modeStarters = {
-        transaction:'Analyse this transaction: ',
-        education:'Explain to me: ',
-        prevention:'How can I protect myself from: ',
-        report:'Generate a risk report for: '
+    const modeConfig = {
+        transaction: { label: 'Analyse',  placeholder: 'Describe a transaction to analyse...', subtitle: 'Describe a transaction to get started', starter: 'Analyse this transaction: ' },
+        education:   { label: 'Learn',    placeholder: 'Ask anything about fraud...', subtitle: 'Ask about fraud patterns, scams, or security', starter: 'Explain to me: ' },
+        prevention:  { label: 'Prevent',  placeholder: 'Describe a situation for prevention advice...', subtitle: 'Get specific prevention advice', starter: 'How can I protect myself from: ' },
+        report:      { label: 'Report',   placeholder: 'Describe a transaction for a risk report...', subtitle: 'Generate a structured risk report', starter: 'Generate a risk report for: ' }
     };
 
     function updateClock() { document.getElementById('clock').textContent = new Date().toTimeString().split(' ')[0]; }
     setInterval(updateClock, 1000); updateClock();
 
-    document.addEventListener('keydown', e => {
-        if (e.key==='F1'){e.preventDefault();setMode('transaction');}
-        if (e.key==='F2'){e.preventDefault();setMode('education');}
-        if (e.key==='F3'){e.preventDefault();setMode('prevention');}
-        if (e.key==='F4'){e.preventDefault();setMode('report');}
-    });
+    function toggleMobileSidebar() {
+        document.getElementById('sidebar').classList.toggle('mobile-open');
+        document.getElementById('sidebarBackdrop').classList.toggle('visible');
+    }
+    function closeMobileSidebar() {
+        document.getElementById('sidebar').classList.remove('mobile-open');
+        document.getElementById('sidebarBackdrop').classList.remove('visible');
+    }
 
     function setMode(mode) {
         currentMode = mode;
-        document.getElementById('inputLabel').textContent = modeLabels[mode];
-        document.getElementById('messageInput').placeholder = modePlaceholders[mode];
-        document.getElementById('messageInput').value = modeStarters[mode];
+        const cfg = modeConfig[mode];
+        document.getElementById('messageInput').placeholder = cfg.placeholder;
+        document.getElementById('messageInput').value = cfg.starter;
+        document.getElementById('modeBadge').textContent = cfg.label;
+        document.getElementById('chatSubtitle').textContent = cfg.subtitle;
         autoResize(document.getElementById('messageInput'));
         document.getElementById('messageInput').focus();
+        document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.remove('active'));
+        const btnMap = { transaction: 'btnTransaction', education: 'btnEducation', prevention: 'btnPrevention', report: 'btnReport' };
+        if (btnMap[mode]) document.getElementById(btnMap[mode]).classList.add('active');
         switchView('analysis');
+        closeMobileSidebar();
     }
 
     function switchView(view) {
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
         document.getElementById('historyPanel').classList.remove('open');
         document.getElementById('reportsPanel').classList.remove('open');
-
         if (view === 'analysis') {
             document.getElementById('navAnalysis').classList.add('active');
             document.getElementById('chatTitle').textContent = 'Analysis Terminal';
@@ -351,6 +637,7 @@
             document.getElementById('reportsPanel').classList.add('open');
             renderReport();
         }
+        closeMobileSidebar();
     }
 
     function renderHistory() {
@@ -366,26 +653,23 @@
             const badgeClass = hasScore ? (verdict === 'FRAUD' ? 'fraud' : 'legitimate') : 'info';
             const badgeText = hasScore ? verdict : 'INFO';
             const riskLabel = hasScore ? entry.fraudData.risk_level.split('—')[0].trim().toLowerCase() : '';
-
             const div = document.createElement('div');
             div.className = 'history-item';
             div.innerHTML = `
                 <div class="history-item-header">
                     <div class="history-item-time">${entry.time}</div>
-                    <div class="history-item-badge ${badgeClass}">${badgeText}</div>
+                    <div class="history-badge ${badgeClass}">${badgeText}</div>
                 </div>
                 <div class="history-item-body">
-                    <div class="history-item-user">▸ ${entry.userMsg}</div>
-                    <div class="history-item-response">${entry.assistantMsg}</div>
-                    ${hasScore ? `
-                    <div class="history-item-score">
-                        <span>Model confidence:</span>
+                    <div class="history-user-msg">▸ ${entry.userMsg}</div>
+                    <div class="history-response">${entry.assistantMsg}</div>
+                    ${hasScore ? `<div class="history-score">
+                        <span>Confidence:</span>
                         <span class="history-score-val ${riskLabel}">${entry.fraudData.probability}%</span>
                         <span>·</span>
                         <span>${entry.fraudData.risk_level}</span>
                     </div>` : ''}
-                </div>
-            `;
+                </div>`;
             div.onclick = () => switchView('analysis');
             body.appendChild(div);
         });
@@ -394,166 +678,152 @@
     function renderReport() {
         const body = document.getElementById('reportsBody');
         if (!lastFraudData) {
-            body.innerHTML = '<div class="report-no-data">No transaction analysed yet.<br>Run an analysis first, then view the report here.</div>';
+            body.innerHTML = '<div class="overlay-empty">No transaction analysed yet.<br>Run an analysis first.</div>';
             return;
         }
-
         const fd = lastFraudData;
         const isFraud = fd.verdict === 'FRAUD';
-        const verdictClass = isFraud ? 'fraud' : 'legitimate';
+        const vc = isFraud ? 'fraud' : 'legitimate';
         const riskParts = fd.risk_level.split('—');
         const riskLabel = riskParts[0].trim();
-        const riskAction = riskParts[1] ? riskParts[1].trim() : '';
-        const riskClass = riskLabel.toLowerCase();
-
+        const riskAction = riskParts[1] ? riskParts[1].trim() : 'Monitor';
+        const rc = riskLabel.toLowerCase();
         body.innerHTML = `
-            <div class="report-verdict-banner ${verdictClass}">
+            <div class="report-verdict ${vc}">
                 <div class="report-verdict-icon">${isFraud ? '🔴' : '🟢'}</div>
                 <div>
-                    <div class="report-verdict-text ${verdictClass}">${fd.verdict}</div>
-                    <div class="report-verdict-sub">${riskAction || riskLabel}</div>
+                    <div class="report-verdict-label ${vc}">${fd.verdict}</div>
+                    <div class="report-verdict-sub">${riskAction}</div>
                 </div>
             </div>
-            <div class="report-section">
-                <div class="report-section-header">Model Assessment</div>
-                <div class="report-section-body">
-                    <div class="report-row">
-                        <div class="report-row-label">Fraud Probability</div>
-                        <div class="report-row-value ${isFraud ? 'danger' : 'safe'}">${fd.probability}%</div>
-                    </div>
-                    <div class="report-row">
-                        <div class="report-row-label">Risk Level</div>
-                        <div class="report-row-value ${riskClass === 'low' ? 'safe' : riskClass === 'medium' ? 'warn' : 'danger'}">${riskLabel}</div>
-                    </div>
-                    <div class="report-row">
-                        <div class="report-row-label">Recommended Action</div>
-                        <div class="report-row-value ${isFraud ? 'danger' : 'safe'}">${riskAction || 'Continue monitoring'}</div>
-                    </div>
-                    <div class="report-row">
-                        <div class="report-row-label">Decision Threshold</div>
-                        <div class="report-row-value">${fd.threshold_used}%</div>
-                    </div>
-                    <div class="report-row">
-                        <div class="report-row-label">Final Verdict</div>
-                        <div class="report-row-value ${isFraud ? 'danger' : 'safe'}">${fd.verdict}</div>
-                    </div>
+            <div class="report-card">
+                <div class="report-card-header">Model Assessment</div>
+                <div>
+                    <div class="report-row"><span class="report-row-label">Fraud Probability</span><span class="report-row-value ${isFraud ? 'danger' : 'safe'}">${fd.probability}%</span></div>
+                    <div class="report-row"><span class="report-row-label">Risk Level</span><span class="report-row-value ${rc === 'low' ? 'safe' : rc === 'medium' ? 'warn' : 'danger'}">${riskLabel}</span></div>
+                    <div class="report-row"><span class="report-row-label">Recommended Action</span><span class="report-row-value ${isFraud ? 'danger' : 'safe'}">${riskAction}</span></div>
+                    <div class="report-row"><span class="report-row-label">Decision Threshold</span><span class="report-row-value">${fd.threshold_used}%</span></div>
                 </div>
             </div>
             ${fd.flags && fd.flags.length > 0 ? `
-            <div class="report-section">
-                <div class="report-section-header">Risk Flags Detected (${fd.flags.length})</div>
-                <div class="report-section-body">
-                    <div class="report-flags">
-                        ${fd.flags.map(f => `<div class="report-flag"><div class="report-flag-dot">!</div><div>${f}</div></div>`).join('')}
-                    </div>
-                </div>
-            </div>` : `
-            <div class="report-section">
-                <div class="report-section-header">Risk Flags</div>
-                <div class="report-section-body"><div style="font-size:11px;color:var(--text-dim)">No specific risk flags detected.</div></div>
-            </div>`}
-            ${lastUserMsg ? `
-            <div class="report-section">
-                <div class="report-section-header">Transaction Description</div>
-                <div class="report-section-body"><div style="font-size:11px;color:var(--text-dim);line-height:1.7">${lastUserMsg}</div></div>
+            <div class="report-card">
+                <div class="report-card-header">Risk Flags (${fd.flags.length})</div>
+                <div>${fd.flags.map(f => `<div class="report-flag-item"><span class="report-flag-dot">!</span><span>${f}</span></div>`).join('')}</div>
             </div>` : ''}
-            <div class="report-section">
-                <div class="report-section-header">Disclaimer</div>
-                <div class="report-section-body"><div style="font-size:10px;color:var(--text-muted);line-height:1.8">This report is generated by an ML model trained on the NeurIPS 2022 Bank Account Fraud Dataset. Model confidence reflects statistical patterns only. High risk flags indicate the need for human review — not a definitive fraud verdict. Always verify with additional checks before taking action.</div></div>
+            ${lastUserMsg ? `
+            <div class="report-card">
+                <div class="report-card-header">Transaction Description</div>
+                <div style="padding:12px 14px;font-size:12px;color:var(--text-dim);line-height:1.7">${lastUserMsg}</div>
+            </div>` : ''}
+            <div class="report-card">
+                <div class="report-disclaimer">This report is generated by an ML model trained on the NeurIPS 2022 Bank Account Fraud Dataset. Model confidence reflects statistical patterns only. High risk flags indicate the need for human review — not a definitive fraud verdict.</div>
             </div>
-            <div class="report-timestamp">Generated: ${new Date().toLocaleString()}</div>
-        `;
+            <div class="report-timestamp">Generated: ${new Date().toLocaleString()}</div>`;
     }
 
-    function autoResize(el) { el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,120)+'px'; }
-    function handleKey(e) { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();} }
+    function autoResize(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 140) + 'px'; }
+    function handleKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }
     function handleImage(e) {
-        const file=e.target.files[0]; if(!file) return;
-        const r=new FileReader();
-        r.onload=ev=>{currentImage=ev.target.result;document.getElementById('previewImg').src=currentImage;document.getElementById('imagePreviewBar').classList.add('visible');};
+        const file = e.target.files[0]; if (!file) return;
+        const r = new FileReader();
+        r.onload = ev => { currentImage = ev.target.result; document.getElementById('previewImg').src = currentImage; document.getElementById('imagePreviewBar').classList.add('visible'); };
         r.readAsDataURL(file);
     }
-    function removeImage() { currentImage=null; document.getElementById('imagePreviewBar').classList.remove('visible'); document.getElementById('imageInput').value=''; }
+    function removeImage() { currentImage = null; document.getElementById('imagePreviewBar').classList.remove('visible'); document.getElementById('imageInput').value = ''; }
     function getTime() { return new Date().toTimeString().split(' ')[0]; }
 
     function addMessage(role, content) {
-        const welcome=document.getElementById('welcome'); if(welcome) welcome.remove();
-        const messages=document.getElementById('messages');
-        const div=document.createElement('div'); div.className=`message ${role}`;
-        div.innerHTML=`<div class="message-prefix"><div class="message-role">${role==='assistant'?'FRAUDGUARD':'YOU'}</div><div class="message-time-small">${getTime()}</div></div><div class="message-body">${content}</div>`;
-        messages.appendChild(div); messages.scrollTop=messages.scrollHeight;
+        const welcome = document.getElementById('welcome'); if (welcome) welcome.remove();
+        const messages = document.getElementById('messages');
+        const div = document.createElement('div'); div.className = `message ${role}`;
+        const initials = role === 'assistant' ? 'FG' : 'U';
+        const name = role === 'assistant' ? 'FraudGuard' : 'You';
+        div.innerHTML = `
+            <div class="message-header">
+                <div class="message-avatar">${initials}</div>
+                <div class="message-name">${name}</div>
+                <div class="message-time">${getTime()}</div>
+            </div>
+            <div class="message-body">${content}</div>`;
+        messages.appendChild(div); messages.scrollTop = messages.scrollHeight;
     }
 
     function showTyping() {
-        const m=document.getElementById('messages');
-        const d=document.createElement('div'); d.className='typing-indicator'; d.id='typing';
-        d.innerHTML='<div class="typing-prefix">Processing</div><div class="typing-body"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>';
-        m.appendChild(d); m.scrollTop=m.scrollHeight;
+        const m = document.getElementById('messages');
+        const d = document.createElement('div'); d.id = 'typing'; d.className = 'typing-indicator';
+        d.innerHTML = '<div class="typing-dots"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>';
+        m.appendChild(d); m.scrollTop = m.scrollHeight;
     }
-    function removeTyping() { const t=document.getElementById('typing'); if(t) t.remove(); }
+    function removeTyping() { const t = document.getElementById('typing'); if (t) t.remove(); }
 
-    function updateRiskPanel(data) {
-        if(!data) return;
-        document.getElementById('noAnalysis').style.display='none';
-        document.getElementById('riskDisplay').classList.add('visible');
+    function updateResultPanel(data) {
+        if (!data) return;
+        document.getElementById('resultEmpty').style.display = 'none';
+        document.getElementById('resultCard').classList.add('visible');
         const riskLabel = data.risk_level.split('—')[0].trim().toLowerCase();
-        const score=document.getElementById('riskScore'); score.textContent=data.probability+'%'; score.className=`risk-score ${riskLabel}`;
-        document.getElementById('riskVerdict').textContent=data.verdict+' — '+data.risk_level;
-        const bar=document.getElementById('riskBarFill'); bar.style.width=Math.min(data.probability * 3, 100)+'%'; bar.className=`risk-bar-fill ${riskLabel}`;
-        const fl=document.getElementById('riskFlagList'); fl.innerHTML='';
-        (data.flags||[]).forEach(f=>{const d=document.createElement('div');d.className='risk-flag-item';d.textContent=f;fl.appendChild(d);});
+        const prob = document.getElementById('resultProb');
+        prob.textContent = data.probability + '%';
+        prob.className = `result-prob ${riskLabel}`;
+        document.getElementById('resultVerdict').textContent = data.verdict + ' — ' + data.risk_level;
+        const bar = document.getElementById('resultBar');
+        bar.style.width = Math.min(data.probability * 3, 100) + '%';
+        bar.className = `result-bar-fill ${riskLabel}`;
+        const fl = document.getElementById('resultFlags'); fl.innerHTML = '';
+        (data.flags || []).forEach(f => {
+            const d = document.createElement('div'); d.className = 'result-flag';
+            d.innerHTML = `<span class="result-flag-dot">●</span><span>${f}</span>`;
+            fl.appendChild(d);
+        });
     }
 
     function clearChat() {
-        document.getElementById('messages').innerHTML='';
-        sessionHistory=[]; lastFraudData=null; lastUserMsg=null; lastAssistantMsg=null;
-        fetch('/clear',{method:'POST'});
+        document.getElementById('messages').innerHTML = '';
+        sessionHistory = []; lastFraudData = null; lastUserMsg = null;
+        document.getElementById('resultCard').classList.remove('visible');
+        document.getElementById('resultEmpty').style.display = '';
+        fetch('/clear', { method: 'POST' });
     }
 
     function exportChat() {
-        const msgs=document.querySelectorAll('.message'); let text='FRAUDGUARD SESSION EXPORT\n'+new Date().toISOString()+'\n\n';
-        msgs.forEach(m=>{
-            const r=m.querySelector('.message-role').textContent;
-            const b=m.querySelector('.message-body').textContent;
-            const t=m.querySelector('.message-time-small').textContent;
-            text+=`[${t}] ${r}:\n${b}\n\n`;
+        const msgs = document.querySelectorAll('.message');
+        let text = 'FRAUDGUARD SESSION EXPORT\n' + new Date().toISOString() + '\n\n';
+        msgs.forEach(m => {
+            const name = m.querySelector('.message-name').textContent;
+            const body = m.querySelector('.message-body').textContent;
+            const time = m.querySelector('.message-time').textContent;
+            text += `[${time}] ${name}:\n${body}\n\n`;
         });
-        const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([text],{type:'text/plain'})); a.download='fraudguard-session.txt'; a.click();
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([text], { type: 'text/plain' }));
+        a.download = 'fraudguard-session.txt'; a.click();
     }
 
     async function send() {
-        const input=document.getElementById('messageInput');
-        const sendBtn=document.getElementById('sendBtn');
-        const message=input.value.trim(); if(!message&&!currentImage) return;
+        const input = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const message = input.value.trim();
+        if (!message && !currentImage) return;
 
         lastUserMsg = message;
-        addMessage('user', message||'[Screenshot uploaded for analysis]');
-        input.value=''; input.style.height='auto'; sendBtn.disabled=true;
-        const imgToSend=currentImage; removeImage(); showTyping();
+        addMessage('user', message || '[Screenshot uploaded for analysis]');
+        input.value = ''; input.style.height = 'auto'; sendBtn.disabled = true;
+        const imgToSend = currentImage; removeImage(); showTyping();
 
         try {
-            const res=await fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message,image:imgToSend,mode:currentMode})});
-            const data=await res.json(); removeTyping();
-            addMessage('assistant',data.message);
-            lastAssistantMsg=data.message;
-
-            if(data.fraud_data) {
-                lastFraudData=data.fraud_data;
-                updateRiskPanel(data.fraud_data);
-            }
-
-            sessionHistory.push({
-                time: getTime(),
-                userMsg: message||'[Screenshot]',
-                assistantMsg: data.message,
-                fraudData: data.fraud_data||null
+            const res = await fetch('/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message, image: imgToSend, mode: currentMode })
             });
-
-        } catch(err) {
+            const data = await res.json(); removeTyping();
+            addMessage('assistant', data.message);
+            if (data.fraud_data) { lastFraudData = data.fraud_data; updateResultPanel(data.fraud_data); }
+            sessionHistory.push({ time: getTime(), userMsg: message || '[Screenshot]', assistantMsg: data.message, fraudData: data.fraud_data || null });
+        } catch (err) {
             removeTyping();
-            addMessage('assistant','Connection error. Please try again.');
+            addMessage('assistant', 'Connection error. Please try again.');
         }
-        sendBtn.disabled=false; input.focus();
+        sendBtn.disabled = false; input.focus();
     }
 </script>
 </body>
