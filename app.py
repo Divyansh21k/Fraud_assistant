@@ -77,6 +77,14 @@ def parse_hour(time_value: str) -> int:
         return 12
 
 
+def parse_minutes(time_value: str) -> int:
+    try:
+        parsed = datetime.strptime(time_value, '%H:%M')
+        return parsed.hour * 60 + parsed.minute
+    except (TypeError, ValueError):
+        return 12 * 60
+
+
 def time_bucket_from_hour(hour: int) -> str:
     if 0 <= hour < 6:
         return 'Night (00:00-05:59)'
@@ -87,7 +95,37 @@ def time_bucket_from_hour(hour: int) -> str:
     return 'Evening (18:00-23:59)'
 
 
-def to_model_features(payload):
+def derive_behavior_features(payload, prior_transactions=None):
+    prior_transactions = prior_transactions or []
+
+    amount = float(payload.get('amount', 0) or 0)
+    current_minute = parse_minutes(payload.get('time', '12:00'))
+
+    prior_amounts = [float(txn.get('amount', 0) or 0) for txn in prior_transactions]
+    baseline_amount = (sum(prior_amounts) / len(prior_amounts)) if prior_amounts else max(amount, 1.0)
+    amount_deviation = abs(amount - baseline_amount) / (baseline_amount + 1)
+
+    recent_txn_count = 0
+    for txn in prior_transactions:
+        delta_minutes = current_minute - parse_minutes(txn.get('time', '12:00'))
+        if 0 <= delta_minutes <= 60:
+            recent_txn_count += 1
+    transaction_velocity = recent_txn_count + 1
+
+    prior_hours = [parse_hour(txn.get('time', '12:00')) for txn in prior_transactions]
+    baseline_hour = (sum(prior_hours) / len(prior_hours)) if prior_hours else 13
+    current_hour = parse_hour(payload.get('time', '12:00'))
+    hour_distance = abs(current_hour - baseline_hour)
+    time_anomaly = min(1.0, hour_distance / 12)
+
+    return {
+        'amount_deviation': round(float(amount_deviation), 4),
+        'transaction_velocity': int(transaction_velocity),
+        'time_anomaly': round(float(time_anomaly), 4),
+    }
+
+
+def to_model_features(payload, derived_features):
     amount = float(payload.get('amount', 0) or 0)
     txn_time = payload.get('time', '12:00')
     device_change = bool(payload.get('device_change', False))
@@ -105,6 +143,10 @@ def to_model_features(payload):
         'credit_risk_score': 95 if (device_change and location_change) else 145,
         'device_fraud_count': 1 if device_change else 0,
         'source': 1 if device_change else 0,
+        'amount_deviation': derived_features['amount_deviation'],
+        'transaction_velocity': derived_features['transaction_velocity'],
+        'time_anomaly': derived_features['time_anomaly'],
+        'txn_hour': hour,
     }
 
 
@@ -133,6 +175,38 @@ def generate_explanation(case_context):
         return 'Explanation service temporarily unavailable. Use key signals and action list for decisioning.'
 
 
+def build_transaction_response(payload, prior_transactions=None):
+    amount = float(payload.get('amount', 0) or 0)
+    txn_time = payload.get('time', '12:00')
+    device_change = bool(payload.get('device_change', False))
+    location_change = bool(payload.get('location_change', False))
+
+    derived_features = derive_behavior_features(payload, prior_transactions=prior_transactions)
+    model_features = to_model_features(payload, derived_features)
+    model_result = score_transaction(model_features)
+
+    hour = parse_hour(txn_time)
+    context = {
+        'amount': f'₹{amount:,.2f}',
+        'time_bucket': time_bucket_from_hour(hour),
+        'device_change': 'Yes' if device_change else 'No',
+        'location_change': 'Yes' if location_change else 'No',
+        'risk_score': model_result['risk_score'],
+        'risk_level': model_result['risk_level'],
+        'signals': '; '.join(model_result['signals']),
+    }
+
+    explanation = generate_explanation(context)
+
+    return {
+        'risk_score': model_result['risk_score'],
+        'risk_level': model_result['risk_level'],
+        'signals': model_result['signals'],
+        'explanation': explanation,
+        'actions': model_result['actions'],
+    }
+
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -156,42 +230,28 @@ def scenarios():
 @app.route('/api/analyze', methods=['POST'])
 def analyze():
     payload = request.get_json(silent=True) or {}
+    return jsonify(build_transaction_response(payload))
 
-    amount = float(payload.get('amount', 0) or 0)
-    txn_time = payload.get('time', '12:00')
-    device_change = bool(payload.get('device_change', False))
-    location_change = bool(payload.get('location_change', False))
 
-    model_features = to_model_features(payload)
-    model_result = score_transaction(model_features)
+@app.route('/analyze/batch', methods=['POST'])
+def analyze_batch():
+    payload = request.get_json(silent=True)
+    transactions = payload if isinstance(payload, list) else (payload or {}).get('transactions', [])
 
-    hour = parse_hour(txn_time)
-    context = {
-        'amount': f'₹{amount:,.2f}',
-        'time_bucket': time_bucket_from_hour(hour),
-        'device_change': 'Yes' if device_change else 'No',
-        'location_change': 'Yes' if location_change else 'No',
-        'risk_score': model_result['risk_score'],
-        'risk_level': model_result['risk_level'],
-        'signals': '; '.join(model_result['signals']),
-    }
+    if not isinstance(transactions, list):
+        return jsonify({'error': 'Payload must be a list or {"transactions": [...]}'}), 400
 
-    explanation = generate_explanation(context)
+    results = []
+    summary = {'HIGH': 0, 'MEDIUM': 0, 'LOW': 0}
 
-    response = {
-        'risk_score': model_result['risk_score'],
-        'risk_level': model_result['risk_level'],
-        'signals': model_result['signals'],
-        'explanation': explanation,
-        'actions': model_result['actions'],
-        'input': {
-            'amount': amount,
-            'time': txn_time,
-            'device_change': device_change,
-            'location_change': location_change,
-        },
-    }
-    return jsonify(response)
+    for index, txn in enumerate(transactions):
+        txn = txn or {}
+        prior_transactions = transactions[:index]
+        result = build_transaction_response(txn, prior_transactions=prior_transactions)
+        results.append(result)
+        summary[result['risk_level']] += 1
+
+    return jsonify({'results': results, 'summary': summary})
 
 
 if __name__ == '__main__':

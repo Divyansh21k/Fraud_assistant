@@ -15,12 +15,12 @@ It turns core transaction signals (amount, time, device/location change) into a 
 4. Decide and execute controls.
 
 ## Structured API Output
-`POST /api/analyze`
+`POST /api/analyze` and `POST /analyze/batch`
 
 ```json
 {
   "risk_score": 82,
-  "risk_level": "High",
+  "risk_level": "HIGH",
   "signals": ["Location shift detected from normal usage pattern."],
   "explanation": "This transaction shows ...",
   "actions": [

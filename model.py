@@ -45,31 +45,68 @@ FEATURE_DEFAULTS = {
 
 def get_risk_level(risk_score: float) -> str:
     if risk_score >= 75:
-        return 'High'
+        return 'HIGH'
     if risk_score >= 45:
-        return 'Medium'
-    return 'Low'
+        return 'MEDIUM'
+    return 'LOW'
 
 
 def get_actions(risk_level: str):
     action_map = {
-        'High': [
+        'HIGH': [
             'Block transaction temporarily and place hold for 30 minutes.',
             'Trigger step-up verification (OTP + device binding check).',
             'Escalate immediately to manual fraud analyst review.',
         ],
-        'Medium': [
+        'MEDIUM': [
             'Trigger OTP verification before settlement.',
             'Add transaction to analyst queue for same-day review.',
             'Notify customer in-app and request confirmation of intent.',
         ],
-        'Low': [
+        'LOW': [
             'Allow transaction with passive monitoring.',
             'Log case for behavior baseline updates.',
             'No manual review required unless repeated anomalies appear.',
         ],
     }
-    return action_map.get(risk_level, action_map['Medium'])
+    return action_map.get(risk_level, action_map['MEDIUM'])
+
+
+def compute_rule_signals(transaction_info):
+    rule_score = 0
+    signals = []
+
+    amount = float(transaction_info.get('intended_balcon_amount', 0) or 0)
+    transaction_velocity = float(transaction_info.get('transaction_velocity', 1) or 1)
+    amount_deviation = float(transaction_info.get('amount_deviation', 0) or 0)
+    time_anomaly = float(transaction_info.get('time_anomaly', 0) or 0)
+    txn_hour = int(transaction_info.get('txn_hour', 12) or 12)
+
+    if amount >= 15000:
+        rule_score += 22
+        signals.append('High amount compared with regular UPI transfer range.')
+
+    if transaction_info.get('keep_alive_session', 1) == 0:
+        rule_score += 18
+        signals.append('Device changed recently for this transfer session.')
+
+    if transaction_info.get('foreign_request', 0) == 1:
+        rule_score += 18
+        signals.append('Location change detected from expected customer region.')
+
+    if txn_hour < 6 or txn_hour >= 23 or time_anomaly >= 0.55:
+        rule_score += 14
+        signals.append('Transaction time is unusual for this customer behavior pattern.')
+
+    if amount_deviation >= 0.7:
+        rule_score += 12
+        signals.append('Amount deviates materially from baseline spending behavior.')
+
+    if transaction_velocity >= 4:
+        rule_score += 12
+        signals.append('High transaction velocity detected in short time window.')
+
+    return rule_score, signals
 
 
 def score_transaction(transaction_info):
@@ -92,28 +129,21 @@ def score_transaction(transaction_info):
     df = df[feature_columns]
 
     probability = float(model.predict_proba(df)[0][1])
-    risk_score = round(probability * 100, 2)
-    risk_level = get_risk_level(risk_score)
+    model_score = round(probability * 100, 2)
 
-    flags = []
-    if transaction_info.get('foreign_request', 0) == 1:
-        flags.append('Location shift detected from normal usage pattern.')
-    if transaction_info.get('velocity_6h', 0) > 2500:
-        flags.append('High transfer velocity in a short window.')
-    if transaction_info.get('credit_risk_score', 150) < 100:
-        flags.append('Customer profile indicates elevated baseline risk.')
-    if transaction_info.get('device_fraud_count', 0) > 0:
-        flags.append('Device has prior fraud-linked history.')
-    if transaction_info.get('keep_alive_session', 1) == 0:
-        flags.append('Session pattern appears abrupt and atypical.')
+    rule_score, rule_signals = compute_rule_signals(transaction_info)
+    final_score = round(min(100.0, model_score + rule_score), 2)
+    risk_level = get_risk_level(final_score)
 
-    if not flags:
-        flags.append('No major anomaly signal triggered beyond baseline behavior.')
+    if not rule_signals:
+        rule_signals.append('No major rule-based anomaly triggered beyond baseline behavior.')
 
     return {
-        'risk_score': risk_score,
+        'risk_score': final_score,
         'risk_level': risk_level,
-        'signals': flags,
+        'signals': rule_signals,
         'actions': get_actions(risk_level),
+        'model_score': model_score,
+        'rule_score': rule_score,
         'threshold_used': round(float(threshold) * 100, 2),
     }
