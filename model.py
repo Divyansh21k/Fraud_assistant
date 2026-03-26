@@ -1,5 +1,4 @@
 import pickle
-import numpy as np
 import pandas as pd
 
 with open('fraudguard_v2.pkl', 'rb') as f:
@@ -24,7 +23,7 @@ FEATURE_DEFAULTS = {
     'zip_count_4w': 200,
     'date_of_birth_distinct_emails_4w': 3,
     'bank_branch_count_8w': 10,
-    'employment_status': 1, 
+    'employment_status': 1,
     'credit_risk_score': 150,
     'email_is_free': 0,
     'housing_status': 2,
@@ -40,8 +39,38 @@ FEATURE_DEFAULTS = {
     'keep_alive_session': 1,
     'device_distinct_emails_8w': 1,
     'device_fraud_count': 0,
-    'month': 3
+    'month': 3,
 }
+
+
+def get_risk_level(risk_score: float) -> str:
+    if risk_score >= 75:
+        return 'High'
+    if risk_score >= 45:
+        return 'Medium'
+    return 'Low'
+
+
+def get_actions(risk_level: str):
+    action_map = {
+        'High': [
+            'Block transaction temporarily and place hold for 30 minutes.',
+            'Trigger step-up verification (OTP + device binding check).',
+            'Escalate immediately to manual fraud analyst review.',
+        ],
+        'Medium': [
+            'Trigger OTP verification before settlement.',
+            'Add transaction to analyst queue for same-day review.',
+            'Notify customer in-app and request confirmation of intent.',
+        ],
+        'Low': [
+            'Allow transaction with passive monitoring.',
+            'Log case for behavior baseline updates.',
+            'No manual review required unless repeated anomalies appear.',
+        ],
+    }
+    return action_map.get(risk_level, action_map['Medium'])
+
 
 def score_transaction(transaction_info):
     features = FEATURE_DEFAULTS.copy()
@@ -63,38 +92,28 @@ def score_transaction(transaction_info):
     df = df[feature_columns]
 
     probability = float(model.predict_proba(df)[0][1])
-    print(f"DEBUG probability: {probability:.4f}, threshold: {threshold:.4f}")
+    risk_score = round(probability * 100, 2)
+    risk_level = get_risk_level(risk_score)
 
-    verdict = "FRAUD" if probability >= threshold else "LEGITIMATE"
-
-    if probability >= 0.30:
-        risk_level = "Critical — Recommend Block"
-    elif probability >= 0.20:
-        risk_level = "High — Recommend Review"
-    elif probability >= 0.10:
-        risk_level = "Medium — Monitor"
-    else:
-        risk_level = "Low — Clear"
     flags = []
     if transaction_info.get('foreign_request', 0) == 1:
-        flags.append("foreign request")
-    if transaction_info.get('email_is_free', 0) == 1:
-        flags.append("free email provider")
-    if transaction_info.get('velocity_6h', 1) > 5:
-        flags.append("high transaction velocity")
+        flags.append('Location shift detected from normal usage pattern.')
+    if transaction_info.get('velocity_6h', 0) > 2500:
+        flags.append('High transfer velocity in a short window.')
     if transaction_info.get('credit_risk_score', 150) < 100:
-        flags.append("low credit risk score")
+        flags.append('Customer profile indicates elevated baseline risk.')
     if transaction_info.get('device_fraud_count', 0) > 0:
-        flags.append("device previously linked to fraud")
-    if transaction_info.get('phone_home_valid', 1) == 0 and transaction_info.get('phone_mobile_valid', 1) == 0:
-        flags.append("no valid phone number")
-    if transaction_info.get('session_length_in_minutes', 5) < 1:
-        flags.append("very short session")
+        flags.append('Device has prior fraud-linked history.')
+    if transaction_info.get('keep_alive_session', 1) == 0:
+        flags.append('Session pattern appears abrupt and atypical.')
+
+    if not flags:
+        flags.append('No major anomaly signal triggered beyond baseline behavior.')
 
     return {
-        'probability': round(probability * 100, 2),
-        'verdict': verdict,
+        'risk_score': risk_score,
         'risk_level': risk_level,
-        'flags': flags,
-        'threshold_used': round(float(threshold) * 100, 2)
+        'signals': flags,
+        'actions': get_actions(risk_level),
+        'threshold_used': round(float(threshold) * 100, 2),
     }
