@@ -1,179 +1,197 @@
-from flask import Flask, request, jsonify, render_template, session
+from flask import Flask, request, jsonify, render_template
 from groq import Groq
-from model import score_transaction
 from dotenv import load_dotenv
+from datetime import datetime
 import os
-import json
+
+from model import score_transaction
 
 load_dotenv(override=True)
 
 app = Flask(__name__)
-app.secret_key = os.urandom(24)
 
-groq_client = Groq(api_key=os.getenv('GROQ_API_KEY'))
+GROQ_API_KEY = os.getenv('GROQ_API_KEY')
+groq_client = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
 
-SYSTEM_PROMPT = """You are FraudGuard — a fraud intelligence system backed by a real machine learning model trained on 1,000,000 bank account transactions from the NeurIPS 2022 Bank Account Fraud Dataset.
+PRODUCT_POSITIONING = [
+    'FraudGuard is a decision-support copilot for fintech fraud analysts reviewing UPI-style transfers.',
+    'It converts a few transaction signals into a calibrated risk score, clear rationale, and next-best action.',
+    'Goal: reduce false negatives without overwhelming support teams with vague alerts.',
+]
 
-You think like a seasoned fraud analyst who also happens to be great at explaining things. You've seen thousands of fraud cases. You know the patterns. When someone describes a transaction or an application, you don't just run it through a checklist — you actually think about what's going on, what the likely story is, and what the person should do.
+LLM_PROMPT_TEMPLATE = """You are FraudGuard Explain, an expert fraud analyst assistant for UPI-style payment reviews.
 
-You talk like a person. Not an assistant, not a bot, not a product. A person who knows a lot about fraud and genuinely wants to help. You're direct, you're clear, and you don't waste words. When something is suspicious you say so plainly. When something looks fine you say that too without hedging.
+Return exactly 1 concise paragraph (60-90 words) that is specific and decision-oriented.
+Use this case data:
+- Amount: {amount}
+- Time bucket: {time_bucket}
+- Device changed: {device_change}
+- Location changed: {location_change}
+- Risk score: {risk_score}/100
+- Risk level: {risk_level}
+- Key signals: {signals}
 
-Always respond in English by default. Only switch to another language if the user explicitly writes to you in that language first.
+Rules:
+1) Explain why this specific transaction is risky or not.
+2) Mention at least two concrete signals.
+3) End with one action-focused sentence aligned to risk level.
+4) Do not use generic advice or disclaimers.
+"""
 
-You remember everything said in the conversation. If someone mentioned a transaction earlier and now asks a follow up, you connect the dots without being asked.
-
-When someone describes a transaction or suspicious activity, think through it naturally — what patterns stand out, what type of fraud does this look like. Then score it using your ML model and explain what the model found in plain English. Not jargon, not a template — actual explanation of why this specific situation looks suspicious or not.
-
-ONLY output a <<SCORE>> block when the user is clearly describing a specific suspicious transaction or financial activity they want analysed. Never output a <<SCORE>> block for greetings, general questions, or casual conversation.
-
-To score a transaction, extract what you can from what the user said and output this block at the very END of your response, after everything else:
-<<SCORE>>
-{"housing_status": 0, "device_os": 2, "has_other_cards": 0, "keep_alive_session": 0, "phone_home_valid": 0, "email_is_free": 1, "income": 0.3, "prev_address_months_count": 2, "foreign_request": 1, "credit_risk_score": 80}
-<</SCORE>>
-
-Only include fields you are confident about from what the user described. Use these mappings:
-- renting / no fixed address / unstable housing = housing_status: 0, owns home = housing_status: 3, average housing = housing_status: 2
-- Windows = device_os: 0, Mac = device_os: 1, Linux = device_os: 2, Android = device_os: 3, iOS = device_os: 4
-- has no other bank cards = has_other_cards: 0, has other cards = has_other_cards: 1
-- session ended quickly or no keep alive = keep_alive_session: 0, normal session = keep_alive_session: 1
-- no home phone or invalid = phone_home_valid: 0, has valid home phone = phone_home_valid: 1
-- gmail / yahoo / hotmail / free email = email_is_free: 1, work or corporate email = email_is_free: 0
-- income is a decimal 0 to 1 (0.1 = very low, 0.5 = average, 0.9 = high)
-- prev_address_months_count: months at previous address, 0 if just moved or unknown
-- foreign_request: 1 if request is coming from another country, 0 if local
-- credit_risk_score: 0 to 300, higher is better (below 100 = risky, 150 = average, 250+ = good)
-
-The ML model's probability is final. You explain it, you never argue with it or change it.
-
-When someone just says hi or starts casual conversation, respond naturally in one or two sentences. Never list your features or introduce yourself with a paragraph.
-
-When someone asks a general question about fraud — how phishing works, what to do if their card is stolen, how to spot a scam — answer it properly with real knowledge. Give them something genuinely useful, not generic advice they could have googled.
-
-For prevention advice, be specific to their situation. Not generic tips.
-
-You are not a demo. You are not a prototype. You are a working fraud intelligence system and you act like one."""
+SCENARIO_TEMPLATES = {
+    'normal_transfer': {
+        'name': 'Normal transfer',
+        'amount': 2200,
+        'time': '14:15',
+        'device_change': False,
+        'location_change': False,
+    },
+    'upi_scam': {
+        'name': 'UPI collect scam',
+        'amount': 18500,
+        'time': '23:40',
+        'device_change': True,
+        'location_change': True,
+    },
+    'account_takeover': {
+        'name': 'Account takeover',
+        'amount': 42000,
+        'time': '02:10',
+        'device_change': True,
+        'location_change': False,
+    },
+    'card_testing': {
+        'name': 'Card testing burst',
+        'amount': 299,
+        'time': '03:05',
+        'device_change': True,
+        'location_change': True,
+    },
+}
 
 
+def parse_hour(time_value: str) -> int:
+    try:
+        return datetime.strptime(time_value, '%H:%M').hour
+    except (TypeError, ValueError):
+        return 12
 
 
-def extract_score_block(text):
-    if '<<SCORE>>' in text:
-        start = text.index('<<SCORE>>') + len('<<SCORE>>')
-        if '<</SCORE>>' in text:
-            end = text.index('<</SCORE>>')
-        else:
-            end = len(text)
-        clean_text = text[:text.index('<<SCORE>>')].strip()
-        json_str = text[start:end].strip()
-        try:
-            transaction_info = json.loads(json_str)
-            return clean_text, transaction_info
-        except:
-            return clean_text, None
-    return text, None
+def time_bucket_from_hour(hour: int) -> str:
+    if 0 <= hour < 6:
+        return 'Night (00:00-05:59)'
+    if 6 <= hour < 12:
+        return 'Morning (06:00-11:59)'
+    if 12 <= hour < 18:
+        return 'Afternoon (12:00-17:59)'
+    return 'Evening (18:00-23:59)'
+
+
+def to_model_features(payload):
+    amount = float(payload.get('amount', 0) or 0)
+    txn_time = payload.get('time', '12:00')
+    device_change = bool(payload.get('device_change', False))
+    location_change = bool(payload.get('location_change', False))
+
+    hour = parse_hour(txn_time)
+    is_night = 1 if hour < 6 else 0
+
+    return {
+        'intended_balcon_amount': amount,
+        'velocity_6h': 800 + (amount * 0.12) + (900 * is_night) + (1200 if device_change else 0),
+        'velocity_24h': 1800 + (amount * 0.2),
+        'foreign_request': 1 if location_change else 0,
+        'keep_alive_session': 0 if device_change else 1,
+        'credit_risk_score': 95 if (device_change and location_change) else 145,
+        'device_fraud_count': 1 if device_change else 0,
+        'source': 1 if device_change else 0,
+    }
+
+
+def generate_explanation(case_context):
+    prompt = LLM_PROMPT_TEMPLATE.format(**case_context)
+
+    if not groq_client:
+        return (
+            f"This transfer is rated {case_context['risk_score']}/100 ({case_context['risk_level']}) because "
+            f"it combines {case_context['signals']}. Prioritize the recommended control action before settlement."
+        )
+
+    try:
+        response = groq_client.chat.completions.create(
+            model='llama-3.3-70b-versatile',
+            messages=[
+                {'role': 'system', 'content': 'You write precise fraud-review explanations for operations teams.'},
+                {'role': 'user', 'content': prompt},
+            ],
+            temperature=0.2,
+            max_tokens=180,
+        )
+        text = response.choices[0].message.content.strip()
+        return text or 'Explanation unavailable. Use risk signals and actions for immediate decision.'
+    except Exception:
+        return 'Explanation service temporarily unavailable. Use key signals and action list for decisioning.'
 
 
 @app.route('/')
 def index():
-    session['conversation'] = []
     return render_template('index.html')
 
 
 @app.route('/health')
 def health():
-    return 'ok', 200
+    return {'status': 'ok'}, 200
 
 
-@app.route('/chat', methods=['POST'])
-def chat():
-    data = request.json
-    user_message = data.get('message', '')
-    image_data = data.get('image', None)
-    mode = data.get('mode', 'transaction')
+@app.route('/api/positioning')
+def positioning():
+    return jsonify({'positioning': PRODUCT_POSITIONING})
 
-    if 'conversation' not in session:
-        session['conversation'] = []
 
-    conversation = session['conversation']
+@app.route('/api/scenarios')
+def scenarios():
+    return jsonify({'scenarios': SCENARIO_TEMPLATES})
 
-    if image_data:
-        try:
-            image_response = groq_client.chat.completions.create(
-                model="meta-llama/llama-4-scout-17b-16e-instruct",
-                messages=[{
-                    "role": "user",
-                    "content": [
-                        {"type": "image_url", "image_url": {"url": image_data}},
-                        {"type": "text", "text": "Extract all transaction details from this payment screenshot — amount, currency, time, merchant, device type, email addresses if visible, and anything else relevant to fraud detection."}
-                    ]
-                }]
-            )
-            user_message = image_response.choices[0].message.content
-        except Exception as e:
-            user_message = "I uploaded a payment screenshot but couldn't read it clearly. Can you help me assess if it might be fraud?"
 
-    mode_hints = {
-        'education': ' (user wants to learn about fraud)',
-        'prevention': ' (user wants prevention advice)',
-        'report': ' (user wants a structured risk report)'
+@app.route('/api/analyze', methods=['POST'])
+def analyze():
+    payload = request.get_json(silent=True) or {}
+
+    amount = float(payload.get('amount', 0) or 0)
+    txn_time = payload.get('time', '12:00')
+    device_change = bool(payload.get('device_change', False))
+    location_change = bool(payload.get('location_change', False))
+
+    model_features = to_model_features(payload)
+    model_result = score_transaction(model_features)
+
+    hour = parse_hour(txn_time)
+    context = {
+        'amount': f'₹{amount:,.2f}',
+        'time_bucket': time_bucket_from_hour(hour),
+        'device_change': 'Yes' if device_change else 'No',
+        'location_change': 'Yes' if location_change else 'No',
+        'risk_score': model_result['risk_score'],
+        'risk_level': model_result['risk_level'],
+        'signals': '; '.join(model_result['signals']),
     }
 
-    message_with_hint = user_message
-    if mode != 'transaction' and mode in mode_hints:
-        message_with_hint = user_message + mode_hints[mode]
+    explanation = generate_explanation(context)
 
-    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
-    messages.extend(conversation[-12:])
-    messages.append({"role": "user", "content": message_with_hint})
-
-    response = groq_client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=messages,
-        temperature=0.7,
-        max_tokens=800
-    )
-
-    raw_response = response.choices[0].message.content
-    print("RAW RESPONSE END:", raw_response[-300:])
-
-    clean_response, transaction_info = extract_score_block(raw_response)
-
-    transaction_keywords = ['transaction', 'payment', 'transfer', 'charge', 'purchase',
-                            'fraud', 'suspicious', 'account', 'card', 'bank', 'money',
-                            'amount', 'sent', 'received', 'debit', 'credit', 'upi',
-                            'withdraw', 'deposit', 'loan', 'request', 'email', 'device']
-    message_lower = user_message.lower()
-    has_transaction_context = any(word in message_lower for word in transaction_keywords)
-
-    if not has_transaction_context:
-        transaction_info = None
-
-    fraud_result = None
-    if transaction_info:
-        try:
-            fraud_result = score_transaction(transaction_info)
-            verdict_emoji = "🔴" if fraud_result['verdict'] == 'FRAUD' else "🟢"
-            score_summary = f"\n\n{verdict_emoji} Risk Flag: {fraud_result['risk_level']} ({fraud_result['probability']}% model confidence)"
-            clean_response = clean_response + score_summary
-        except Exception as e:
-            print(f"Scoring error: {e}")
-
-    conversation.append({"role": "user", "content": user_message})
-    conversation.append({"role": "assistant", "content": clean_response})
-    session['conversation'] = conversation
-    session.modified = True
-
-    result = {'message': clean_response}
-    if fraud_result:
-        result['fraud_data'] = fraud_result
-
-    return jsonify(result)
-
-
-@app.route('/clear', methods=['POST'])
-def clear():
-    session['conversation'] = []
-    return jsonify({'status': 'cleared'})
+    response = {
+        'risk_score': model_result['risk_score'],
+        'risk_level': model_result['risk_level'],
+        'signals': model_result['signals'],
+        'explanation': explanation,
+        'actions': model_result['actions'],
+        'input': {
+            'amount': amount,
+            'time': txn_time,
+            'device_change': device_change,
+            'location_change': location_change,
+        },
+    }
+    return jsonify(response)
 
 
 if __name__ == '__main__':
