@@ -3,265 +3,276 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FraudGuard | UPI Fraud Simulation</title>
-  <style>
-    :root {
-      --bg: #f3f6fb;
-      --card: #ffffff;
-      --text: #0f172a;
-      --muted: #475569;
-      --border: #dbe3f0;
-      --primary: #1d4ed8;
-      --low: #16a34a;
-      --medium: #d97706;
-      --high: #dc2626;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      padding: 24px;
-    }
-    .container { max-width: 1100px; margin: 0 auto; }
-    .hero { margin-bottom: 16px; }
-    .hero h1 { margin: 0 0 8px; font-size: 28px; }
-    .hero p { margin: 0; color: var(--muted); }
-    .positioning {
-      background: #e9f1ff;
-      border: 1px solid #c7dbff;
-      border-radius: 12px;
-      padding: 12px 14px;
-      margin: 16px 0;
-    }
-    .layout {
-      display: grid;
-      grid-template-columns: 360px 1fr;
-      gap: 16px;
-      align-items: start;
-    }
-    .panel {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 16px;
-    }
-    .panel h2 { margin: 0 0 12px; font-size: 18px; }
-    .field { margin-bottom: 12px; }
-    .field label { display: block; margin-bottom: 6px; font-size: 13px; color: var(--muted); }
-    .field input, .field select {
-      width: 100%;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 10px;
-      font-size: 14px;
-    }
-    .toggle-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .toggle {
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 10px;
-      font-size: 13px;
-      color: var(--muted);
-    }
-    .analyze-btn {
-      width: 100%;
-      border: none;
-      border-radius: 10px;
-      background: var(--primary);
-      color: #fff;
-      padding: 11px;
-      font-size: 15px;
-      cursor: pointer;
-      font-weight: 600;
-      margin-top: 8px;
-    }
-    .result-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 12px;
-    }
-    .score { font-size: 34px; font-weight: 700; }
-    .level-badge { border-radius: 999px; padding: 6px 12px; font-size: 12px; font-weight: 700; color: #fff; }
-    .low { background: var(--low); }
-    .medium { background: var(--medium); }
-    .high { background: var(--high); }
-    .section { margin-top: 14px; }
-    .section h3 { margin: 0 0 8px; font-size: 14px; }
-    ul { margin: 0; padding-left: 18px; }
-    li { margin: 6px 0; color: #1e293b; }
-    .explanation {
-      background: #f8fafc;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 12px;
-      line-height: 1.5;
-      color: #0f172a;
-    }
-    @media (max-width: 920px) {
-      .layout { grid-template-columns: 1fr; }
-    }
-  </style>
+  <title>FraudGuard | Analyst Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
 </head>
 <body>
-  <div class="container">
-    <div class="hero">
-      <h1>FraudGuard — UPI Fraud Simulation & Explanation Tool</h1>
-      <p>For fintech fraud analysts and support ops teams reviewing risky transfers.</p>
-    </div>
+  <div id="root"></div>
 
-    <div class="positioning" id="positioning">Loading product positioning...</div>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-    <div class="layout">
-      <section class="panel">
-        <h2>1) Input Panel</h2>
+  <script type="text/babel">
+    const { useEffect, useMemo, useState } = React;
 
-        <div class="field">
-          <label for="scenario">Fraud Scenario Template (Wow Feature)</label>
-          <select id="scenario">
-            <option value="">Select a template (optional)</option>
-          </select>
-        </div>
+    const defaultForm = {
+      amount: 2500,
+      time: '14:30',
+      device_change: false,
+      location_change: false,
+    };
 
-        <div class="field">
-          <label for="amount">Amount (₹)</label>
-          <input type="number" id="amount" min="1" value="2500" />
-        </div>
+    const levelClassMap = {
+      Low: 'low',
+      Medium: 'medium',
+      High: 'high',
+    };
 
-        <div class="field">
-          <label for="time">Transaction Time</label>
-          <input type="time" id="time" value="14:30" />
-        </div>
-
-        <div class="toggle-row">
-          <label class="toggle">Device Change?
-            <select id="device_change">
-              <option value="false">No</option>
-              <option value="true">Yes</option>
-            </select>
-          </label>
-          <label class="toggle">Location Change?
-            <select id="location_change">
-              <option value="false">No</option>
-              <option value="true">Yes</option>
-            </select>
-          </label>
-        </div>
-
-        <button class="analyze-btn" onclick="analyzeTransaction()">2) Analyze Transaction</button>
-      </section>
-
-      <section class="panel">
-        <h2>3) Output Panel</h2>
-        <div class="result-header">
-          <div>
-            <div style="font-size:12px;color:#64748b;">Risk Score</div>
-            <div class="score" id="riskScore">--</div>
-          </div>
-          <div id="riskLevel" class="level-badge">--</div>
-        </div>
-
-        <div class="section">
-          <h3>Key Signals</h3>
-          <ul id="signals"><li>Run analysis to view signals.</li></ul>
-        </div>
-
-        <div class="section">
-          <h3>LLM Explanation</h3>
-          <div class="explanation" id="explanation">No explanation yet.</div>
-        </div>
-
-        <div class="section">
-          <h3>Recommended Actions</h3>
-          <ul id="actions"><li>No actions yet.</li></ul>
-        </div>
-      </section>
-    </div>
-  </div>
-
-  <script>
-    let scenarios = {};
-
-    function boolFromSelect(id) {
-      return document.getElementById(id).value === 'true';
+    function formatCurrency(value) {
+      return new Intl.NumberFormat('en-IN', {
+        style: 'currency',
+        currency: 'INR',
+        maximumFractionDigits: 0,
+      }).format(Number(value) || 0);
     }
 
-    function renderList(id, items) {
-      const el = document.getElementById(id);
-      el.innerHTML = '';
-      (items || []).forEach(item => {
-        const li = document.createElement('li');
-        li.textContent = item;
-        el.appendChild(li);
-      });
-    }
+    function TransactionForm({ form, setForm, onSubmit, isLoading, scenarios, whatIfEnabled, setWhatIfEnabled }) {
+      const scenarioKeys = Object.keys(scenarios || {});
 
-    function setRiskVisuals(level, score) {
-      const levelEl = document.getElementById('riskLevel');
-      levelEl.className = 'level-badge';
-      const normalized = (level || '').toLowerCase();
-      if (normalized === 'high') levelEl.classList.add('high');
-      else if (normalized === 'medium') levelEl.classList.add('medium');
-      else levelEl.classList.add('low');
-      levelEl.textContent = level || '--';
-      document.getElementById('riskScore').textContent = score !== undefined ? score : '--';
-    }
-
-    async function loadPositioning() {
-      const res = await fetch('/api/positioning');
-      const data = await res.json();
-      const html = data.positioning.map(line => `• ${line}`).join('<br/>');
-      document.getElementById('positioning').innerHTML = html;
-    }
-
-    async function loadScenarios() {
-      const res = await fetch('/api/scenarios');
-      const data = await res.json();
-      scenarios = data.scenarios || {};
-      const select = document.getElementById('scenario');
-      Object.entries(scenarios).forEach(([key, value]) => {
-        const option = document.createElement('option');
-        option.value = key;
-        option.textContent = value.name;
-        select.appendChild(option);
-      });
-
-      select.addEventListener('change', () => {
-        const selected = scenarios[select.value];
-        if (!selected) return;
-        document.getElementById('amount').value = selected.amount;
-        document.getElementById('time').value = selected.time;
-        document.getElementById('device_change').value = selected.device_change ? 'true' : 'false';
-        document.getElementById('location_change').value = selected.location_change ? 'true' : 'false';
-      });
-    }
-
-    async function analyzeTransaction() {
-      const payload = {
-        amount: Number(document.getElementById('amount').value),
-        time: document.getElementById('time').value,
-        device_change: boolFromSelect('device_change'),
-        location_change: boolFromSelect('location_change')
+      const handleInputChange = (field, value) => {
+        setForm((prev) => ({ ...prev, [field]: value }));
       };
 
-      const res = await fetch('/api/analyze', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(payload)
-      });
+      const applyScenario = (key) => {
+        if (!key || !scenarios[key]) return;
+        const s = scenarios[key];
+        setForm({
+          amount: s.amount,
+          time: s.time,
+          device_change: s.device_change,
+          location_change: s.location_change,
+        });
+      };
 
-      const data = await res.json();
-      setRiskVisuals(data.risk_level, data.risk_score);
-      renderList('signals', data.signals);
-      document.getElementById('explanation').textContent = data.explanation;
-      renderList('actions', data.actions);
+      return (
+        <section className="card input-card">
+          <div className="card-header">
+            <h2>Transaction Input</h2>
+            <p>Capture key risk signals before scoring.</p>
+          </div>
+
+          <div className="field-group">
+            <label>Scenario Template</label>
+            <select onChange={(e) => applyScenario(e.target.value)} defaultValue="">
+              <option value="">Select template (optional)</option>
+              {scenarioKeys.map((key) => (
+                <option key={key} value={key}>{scenarios[key].name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="field-grid">
+            <div className="field-group">
+              <label>Amount</label>
+              <input
+                type="number"
+                min="1"
+                value={form.amount}
+                onChange={(e) => handleInputChange('amount', Number(e.target.value))}
+              />
+            </div>
+
+            <div className="field-group">
+              <label>Time</label>
+              <input
+                type="time"
+                value={form.time}
+                onChange={(e) => handleInputChange('time', e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="switch-grid">
+            <label className="switch-card">
+              <span>Device Changed</span>
+              <input
+                type="checkbox"
+                checked={form.device_change}
+                onChange={(e) => handleInputChange('device_change', e.target.checked)}
+              />
+            </label>
+            <label className="switch-card">
+              <span>Location Changed</span>
+              <input
+                type="checkbox"
+                checked={form.location_change}
+                onChange={(e) => handleInputChange('location_change', e.target.checked)}
+              />
+            </label>
+          </div>
+
+          <label className="what-if-toggle">
+            <input
+              type="checkbox"
+              checked={whatIfEnabled}
+              onChange={(e) => setWhatIfEnabled(e.target.checked)}
+            />
+            <span>What-if simulation (auto-refresh risk on input changes)</span>
+          </label>
+
+          <button className="analyze-btn" onClick={onSubmit} disabled={isLoading}>
+            {isLoading ? 'Analyzing…' : 'Analyze Risk'}
+          </button>
+        </section>
+      );
     }
 
-    loadPositioning();
-    loadScenarios();
+    function RiskScoreCard({ riskLevel, riskScore }) {
+      const levelClass = levelClassMap[riskLevel] || 'low';
+      return (
+        <section className="card">
+          <div className="result-top">
+            <div>
+              <p className="kicker">Risk Score</p>
+              <div className="score">{riskScore ?? '--'}</div>
+            </div>
+            <span className={`badge ${levelClass}`}>{riskLevel || 'Not Scored'}</span>
+          </div>
+          <div className="progress-track">
+            <div className={`progress-fill ${levelClass}`} style={{ width: `${Math.max(0, Math.min(100, riskScore || 0))}%` }} />
+          </div>
+        </section>
+      );
+    }
+
+    function SignalsList({ signals }) {
+      return (
+        <section className="card">
+          <h3>Signals</h3>
+          <ul className="list">
+            {(signals?.length ? signals : ['Run analysis to view transaction signals.']).map((item, i) => (
+              <li key={`${item}-${i}`}>{item}</li>
+            ))}
+          </ul>
+        </section>
+      );
+    }
+
+    function ExplanationPanel({ text, isLoading }) {
+      return (
+        <section className="card">
+          <h3>LLM Explanation</h3>
+          <p className="muted-block">{isLoading ? 'Generating analyst summary…' : (text || 'No explanation available yet.')}</p>
+        </section>
+      );
+    }
+
+    function ActionSuggestions({ actions }) {
+      return (
+        <section className="card">
+          <h3>Action Suggestions</h3>
+          <ul className="list">
+            {(actions?.length ? actions : ['Await analysis to get decision recommendations.']).map((item, i) => (
+              <li key={`${item}-${i}`}>{item}</li>
+            ))}
+          </ul>
+        </section>
+      );
+    }
+
+    function App() {
+      const [positioning, setPositioning] = useState([]);
+      const [form, setForm] = useState(defaultForm);
+      const [scenarios, setScenarios] = useState({});
+      const [result, setResult] = useState(null);
+      const [isLoading, setIsLoading] = useState(false);
+      const [whatIfEnabled, setWhatIfEnabled] = useState(false);
+
+      const fetchScenarios = async () => {
+        const res = await fetch('/api/scenarios');
+        const data = await res.json();
+        setScenarios(data.scenarios || {});
+      };
+
+      const fetchPositioning = async () => {
+        const res = await fetch('/api/positioning');
+        const data = await res.json();
+        setPositioning(data.positioning || []);
+      };
+
+      const analyzeTransaction = async (nextPayload) => {
+        const payload = nextPayload || form;
+        setIsLoading(true);
+        try {
+          const res = await fetch('/api/analyze', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+          const data = await res.json();
+          setResult(data);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      useEffect(() => {
+        fetchPositioning();
+        fetchScenarios();
+        analyzeTransaction(defaultForm);
+      }, []);
+
+      useEffect(() => {
+        if (!whatIfEnabled) return;
+        const timer = setTimeout(() => analyzeTransaction(form), 320);
+        return () => clearTimeout(timer);
+      }, [form, whatIfEnabled]);
+
+      const titleAmount = useMemo(() => formatCurrency(form.amount), [form.amount]);
+
+      return (
+        <main className="dashboard">
+          <header className="page-header">
+            <div>
+              <h1>FraudGuard Analyst Console</h1>
+              <p>Realtime transaction risk triage for fintech fraud operations.</p>
+            </div>
+            <div className="header-chip">Focused amount: {titleAmount}</div>
+          </header>
+
+          <section className="positioning-card">
+            {positioning.length
+              ? positioning.map((line, i) => <p key={i}>• {line}</p>)
+              : <p>Loading product context…</p>}
+          </section>
+
+          <section className="dashboard-grid">
+            <TransactionForm
+              form={form}
+              setForm={setForm}
+              onSubmit={() => analyzeTransaction(form)}
+              isLoading={isLoading}
+              scenarios={scenarios}
+              whatIfEnabled={whatIfEnabled}
+              setWhatIfEnabled={setWhatIfEnabled}
+            />
+
+            <section className="results-stack">
+              <RiskScoreCard riskLevel={result?.risk_level} riskScore={result?.risk_score} />
+              <SignalsList signals={result?.signals} />
+              <ExplanationPanel text={result?.explanation} isLoading={isLoading} />
+              <ActionSuggestions actions={result?.actions} />
+            </section>
+          </section>
+        </main>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
   </script>
 </body>
 </html>
