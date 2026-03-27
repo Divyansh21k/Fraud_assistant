@@ -1,12 +1,25 @@
+import os
 import pickle
 import pandas as pd
 
-with open('fraudguard_v2.pkl', 'rb') as f:
-    model_data = pickle.load(f)
 
-model = model_data['model']
-threshold = model_data['threshold']
-feature_columns = model_data['feature_columns']
+def _safe_float(value, default=0.0):
+    try:
+        if value is None:
+            return float(default)
+        return float(value)
+    except (TypeError, ValueError):
+        return float(default)
+
+
+def _safe_int(value, default=0):
+    try:
+        if value is None:
+            return int(default)
+        return int(float(value))
+    except (TypeError, ValueError):
+        return int(default)
+
 
 FEATURE_DEFAULTS = {
     'income': 0.5,
@@ -42,6 +55,22 @@ FEATURE_DEFAULTS = {
     'month': 3,
 }
 
+model = None
+threshold = 0.5
+feature_columns = list(FEATURE_DEFAULTS.keys())
+
+try:
+    model_path = os.path.join(os.path.dirname(__file__), 'fraudguard_v2.pkl')
+    with open(model_path, 'rb') as f:
+        model_data = pickle.load(f)
+
+    model = model_data.get('model')
+    threshold = _safe_float(model_data.get('threshold', 0.5), 0.5)
+    feature_columns = model_data.get('feature_columns') or list(FEATURE_DEFAULTS.keys())
+    print(f"[model] Loaded model from {model_path}")
+except Exception as exc:
+    print(f"[model] Failed to load model: {exc}")
+
 
 def get_risk_level(risk_score: float) -> str:
     if risk_score >= 75:
@@ -75,12 +104,13 @@ def get_actions(risk_level: str):
 def compute_rule_signals(transaction_info):
     rule_score = 0
     signals = []
+    transaction_info = transaction_info if isinstance(transaction_info, dict) else {}
 
-    amount = float(transaction_info.get('intended_balcon_amount', 0) or 0)
-    transaction_velocity = float(transaction_info.get('transaction_velocity', 1) or 1)
-    amount_deviation = float(transaction_info.get('amount_deviation', 0) or 0)
-    time_anomaly = float(transaction_info.get('time_anomaly', 0) or 0)
-    txn_hour = int(transaction_info.get('txn_hour', 12) or 12)
+    amount = _safe_float(transaction_info.get('intended_balcon_amount', 0), 0)
+    transaction_velocity = _safe_float(transaction_info.get('transaction_velocity', 1), 1)
+    amount_deviation = _safe_float(transaction_info.get('amount_deviation', 0), 0)
+    time_anomaly = _safe_float(transaction_info.get('time_anomaly', 0), 0)
+    txn_hour = _safe_int(transaction_info.get('txn_hour', 12), 12)
 
     if amount >= 15000:
         rule_score += 22
@@ -110,8 +140,11 @@ def compute_rule_signals(transaction_info):
 
 
 def score_transaction(transaction_info):
+    transaction_info = transaction_info if isinstance(transaction_info, dict) else {}
+    print(f"[score_transaction] Input received: {transaction_info}")
+
     features = FEATURE_DEFAULTS.copy()
-    features.update({k: v for k, v in transaction_info.items() if k in features})
+    features.update({k: v for k, v in transaction_info.items() if k in features and v is not None})
 
     df = pd.DataFrame([features])
 
@@ -123,16 +156,24 @@ def score_transaction(transaction_info):
         df['address_stability'] = df['current_address_months_count'] + df['prev_address_months_count']
         df['phone_trust'] = df['phone_home_valid'] + df['phone_mobile_valid']
 
-    for col in feature_columns:
+    columns = feature_columns or list(FEATURE_DEFAULTS.keys())
+    for col in columns:
         if col not in df.columns:
             df[col] = 0
-    df = df[feature_columns]
+    df = df[columns]
 
-    probability = float(model.predict_proba(df)[0][1])
-    model_score = round(probability * 100, 2)
+    model_score = 0.0
+    if model is not None:
+        try:
+            probability = _safe_float(model.predict_proba(df)[0][1], 0.0)
+            model_score = round(max(0.0, min(1.0, probability)) * 100, 2)
+        except Exception as exc:
+            print(f"[score_transaction] Model scoring failed: {exc}")
+    else:
+        print("[score_transaction] Model unavailable; falling back to rules only.")
 
     rule_score, rule_signals = compute_rule_signals(transaction_info)
-    final_score = round(min(100.0, model_score + rule_score), 2)
+    final_score = round(max(0.0, min(100.0, _safe_float(model_score, 0) + _safe_float(rule_score, 0))), 2)
     risk_level = get_risk_level(final_score)
 
     if not rule_signals:
@@ -143,7 +184,7 @@ def score_transaction(transaction_info):
         'risk_level': risk_level,
         'signals': rule_signals,
         'actions': get_actions(risk_level),
-        'model_score': model_score,
-        'rule_score': rule_score,
-        'threshold_used': round(float(threshold) * 100, 2),
+        'model_score': _safe_float(model_score, 0),
+        'rule_score': _safe_float(rule_score, 0),
+        'threshold_used': round(_safe_float(threshold, 0.5) * 100, 2),
     }
