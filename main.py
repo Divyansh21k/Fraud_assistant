@@ -1,5 +1,5 @@
 from fastapi import Body, FastAPI, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from typing import Any, Dict, List
 
 app = FastAPI(title="FraudGuard — UPI Fraud Simulation & Decision Engine")
@@ -206,12 +206,184 @@ def analyze_one(raw_payload: Any) -> Dict[str, Any]:
 # ----------
 # Endpoints
 # ----------
-@app.get("/")
-def root() -> Dict[str, Any]:
-    return {
-        "status": "FraudGuard running",
-        "endpoints": ["/analyze", "/analyze/batch"],
-    }
+@app.get("/", response_class=HTMLResponse)
+def root() -> HTMLResponse:
+    html = """
+    <!doctype html>
+    <html lang="en">
+      <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>FraudGuard Risk Analyzer</title>
+        <style>
+          :root {
+            color-scheme: light dark;
+            font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+          }
+          body {
+            margin: 0;
+            padding: 24px;
+            background: #f5f7fb;
+            color: #1f2937;
+          }
+          .card {
+            max-width: 720px;
+            margin: 0 auto;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+          }
+          h1 { margin-top: 0; margin-bottom: 4px; font-size: 1.5rem; }
+          .subtitle { margin-top: 0; color: #4b5563; }
+          .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 12px;
+            margin-bottom: 14px;
+          }
+          label { font-weight: 600; display: block; margin-bottom: 6px; }
+          input[type="number"] {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            background: #fff;
+            color: #111827;
+          }
+          .check {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 6px;
+          }
+          .check label {
+            margin: 0;
+            font-weight: 500;
+          }
+          button {
+            border: none;
+            border-radius: 8px;
+            padding: 10px 14px;
+            background: #2563eb;
+            color: #fff;
+            font-weight: 700;
+            cursor: pointer;
+          }
+          button:hover { background: #1d4ed8; }
+          .result {
+            margin-top: 18px;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 14px;
+          }
+          .result h2 { margin-top: 0; font-size: 1.1rem; }
+          .muted { color: #6b7280; }
+          ul { margin-top: 6px; margin-bottom: 0; padding-left: 18px; }
+          .error { color: #b91c1c; font-weight: 600; margin-top: 10px; }
+        </style>
+      </head>
+      <body>
+        <main class="card">
+          <h1>FraudGuard</h1>
+          <p class="subtitle">Analyze transaction risk instantly.</p>
+          <div class="grid">
+            <div>
+              <label for="amount">Amount</label>
+              <input id="amount" type="number" min="0" step="0.01" placeholder="e.g. 25000" />
+            </div>
+            <div>
+              <label for="hour">Hour (0-23)</label>
+              <input id="hour" type="number" min="0" max="23" step="1" placeholder="e.g. 2" />
+            </div>
+          </div>
+          <div class="grid">
+            <div class="check">
+              <input id="device_changed" type="checkbox" />
+              <label for="device_changed">Device changed</label>
+            </div>
+            <div class="check">
+              <input id="location_changed" type="checkbox" />
+              <label for="location_changed">Location changed</label>
+            </div>
+          </div>
+          <button id="analyzeBtn" type="button">Analyze Risk</button>
+          <div id="error" class="error" role="alert" aria-live="polite"></div>
+          <section id="result" class="result" aria-live="polite">
+            <h2>Result</h2>
+            <p class="muted">Submit a transaction to see risk details.</p>
+          </section>
+        </main>
+        <script>
+          const amountEl = document.getElementById("amount");
+          const hourEl = document.getElementById("hour");
+          const deviceChangedEl = document.getElementById("device_changed");
+          const locationChangedEl = document.getElementById("location_changed");
+          const analyzeBtn = document.getElementById("analyzeBtn");
+          const resultEl = document.getElementById("result");
+          const errorEl = document.getElementById("error");
+
+          function toNumber(value, fallback = 0) {
+            if (value === "" || value === null || value === undefined) return fallback;
+            const parsed = Number(value);
+            return Number.isFinite(parsed) ? parsed : fallback;
+          }
+
+          function toList(items) {
+            if (!Array.isArray(items) || items.length === 0) {
+              return "<li>None</li>";
+            }
+            return items.map((item) => `<li>${String(item)}</li>`).join("");
+          }
+
+          async function analyzeRisk() {
+            errorEl.textContent = "";
+            resultEl.innerHTML = "<h2>Result</h2><p class='muted'>Analyzing...</p>";
+            const payload = {
+              amount: Math.max(0, toNumber(amountEl.value, 0)),
+              hour: Math.min(23, Math.max(0, Math.trunc(toNumber(hourEl.value, 12)))),
+              device_changed: Boolean(deviceChangedEl.checked),
+              location_changed: Boolean(locationChangedEl.checked),
+            };
+
+            try {
+              const response = await fetch("/analyze", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+              });
+
+              if (!response.ok) {
+                throw new Error(`Request failed with status ${response.status}`);
+              }
+
+              const data = await response.json();
+              resultEl.innerHTML = `
+                <h2>Result</h2>
+                <p><strong>Risk score:</strong> ${data.risk_score ?? "N/A"}</p>
+                <p><strong>Risk level:</strong> ${data.risk_level ?? "N/A"}</p>
+                <p><strong>Signals:</strong></p>
+                <ul>${toList(data.signals)}</ul>
+                <p><strong>Explanation:</strong> ${data.explanation ?? "N/A"}</p>
+                <p><strong>Actions:</strong></p>
+                <ul>${toList(data.actions)}</ul>
+              `;
+            } catch (error) {
+              resultEl.innerHTML = "<h2>Result</h2><p class='muted'>No result available.</p>";
+              errorEl.textContent = "Could not analyze risk right now. Please check your input and try again.";
+              console.error(error);
+            }
+          }
+
+          analyzeBtn.addEventListener("click", analyzeRisk);
+        </script>
+      </body>
+    </html>
+    """
+    return HTMLResponse(content=html)
 
 
 @app.post("/analyze")
