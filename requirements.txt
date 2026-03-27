@@ -70,3 +70,6 @@ urllib3==2.6.3
 Werkzeug==3.1.6
 xgboost==3.2.0
 gunicorn==25.1.0
+
+fastapi==0.117.1
+uvicorn==0.36.0
