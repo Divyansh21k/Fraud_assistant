@@ -54,23 +54,19 @@ For prevention advice, be specific to their situation. Not generic tips.
 You are not a demo. You are not a prototype. You are a working fraud intelligence system and you act like one."""
 
 
-
-
 def extract_score_block(text):
-    if '<<SCORE>>' in text:
+    if '<<SCORE>>' not in text:
+        return text, None
+    try:
         start = text.index('<<SCORE>>') + len('<<SCORE>>')
-        if '<</SCORE>>' in text:
-            end = text.index('<</SCORE>>')
-        else:
-            end = len(text)
+        end = text.index('<</SCORE>>') if '<</SCORE>>' in text else len(text)
         clean_text = text[:text.index('<<SCORE>>')].strip()
         json_str = text[start:end].strip()
-        try:
-            transaction_info = json.loads(json_str)
-            return clean_text, transaction_info
-        except:
-            return clean_text, None
-    return text, None
+        transaction_info = json.loads(json_str)
+        return clean_text, transaction_info
+    except Exception as e:
+        print(f"Score block parse error: {e}")
+        return text, None
 
 
 @app.route('/')
@@ -81,93 +77,249 @@ def index():
 
 @app.route('/health')
 def health():
-    return 'ok', 200
+    return jsonify({'status': 'ok', 'model': 'fraudguard_v2', 'version': '2.1'}), 200
+
+
+@app.route('/batch')
+def batch():
+    return render_template('batch.html')
 
 
 @app.route('/chat', methods=['POST'])
 def chat():
-    data = request.json
-    user_message = data.get('message', '')
-    image_data = data.get('image', None)
-    mode = data.get('mode', 'transaction')
+    try:
+        data = request.json or {}
+        user_message = data.get('message', '')
+        image_data = data.get('image', None)
+        mode = data.get('mode', 'transaction')
 
-    if 'conversation' not in session:
-        session['conversation'] = []
+        if 'conversation' not in session:
+            session['conversation'] = []
 
-    conversation = session['conversation']
+        conversation = session['conversation']
 
-    if image_data:
-        try:
-            image_response = groq_client.chat.completions.create(
-                model="meta-llama/llama-4-scout-17b-16e-instruct",
-                messages=[{
-                    "role": "user",
-                    "content": [
-                        {"type": "image_url", "image_url": {"url": image_data}},
-                        {"type": "text", "text": "Extract all transaction details from this payment screenshot — amount, currency, time, merchant, device type, email addresses if visible, and anything else relevant to fraud detection."}
-                    ]
-                }]
-            )
-            user_message = image_response.choices[0].message.content
-        except Exception as e:
-            user_message = "I uploaded a payment screenshot but couldn't read it clearly. Can you help me assess if it might be fraud?"
+        if image_data:
+            try:
+                image_response = groq_client.chat.completions.create(
+                    model="meta-llama/llama-4-scout-17b-16e-instruct",
+                    messages=[{
+                        "role": "user",
+                        "content": [
+                            {"type": "image_url", "image_url": {"url": image_data}},
+                            {"type": "text", "text": "Extract all transaction details from this payment screenshot — amount, currency, time, merchant, device type, email addresses if visible, and anything else relevant to fraud detection."}
+                        ]
+                    }]
+                )
+                user_message = image_response.choices[0].message.content
+            except Exception as e:
+                print(f"Vision error: {e}")
+                user_message = "I uploaded a payment screenshot but couldn't read it clearly. Can you help me assess if it might be fraud?"
 
-    mode_hints = {
-        'education': ' (user wants to learn about fraud)',
-        'prevention': ' (user wants prevention advice)',
-        'report': ' (user wants a structured risk report)'
+        mode_hints = {
+            'education': ' (user wants to learn about fraud)',
+            'prevention': ' (user wants prevention advice)',
+            'report': ' (user wants a structured risk report)'
+        }
+
+        message_with_hint = user_message
+        if mode != 'transaction' and mode in mode_hints:
+            message_with_hint = user_message + mode_hints[mode]
+
+        messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+        messages.extend(conversation[-12:])
+        messages.append({"role": "user", "content": message_with_hint})
+
+        response = groq_client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=messages,
+            temperature=0.7,
+            max_tokens=800
+        )
+
+        raw_response = response.choices[0].message.content
+        clean_response, transaction_info = extract_score_block(raw_response)
+
+        transaction_keywords = ['transaction', 'payment', 'transfer', 'charge', 'purchase',
+                                'fraud', 'suspicious', 'account', 'card', 'bank', 'money',
+                                'amount', 'sent', 'received', 'debit', 'credit', 'upi',
+                                'withdraw', 'deposit', 'loan', 'request', 'email', 'device']
+        message_lower = (user_message or '').lower()
+        has_transaction_context = any(word in message_lower for word in transaction_keywords)
+
+        if not has_transaction_context:
+            transaction_info = None
+
+        fraud_result = None
+        if transaction_info:
+            try:
+                fraud_result = score_transaction(transaction_info)
+                verdict_emoji = "🔴" if fraud_result['verdict'] == 'FRAUD' else "🟢"
+                score_summary = f"\n\n{verdict_emoji} Risk Flag: {fraud_result['risk_level']} ({fraud_result['probability']}% model confidence)"
+                clean_response = clean_response + score_summary
+            except Exception as e:
+                print(f"Scoring error: {e}")
+
+        conversation.append({"role": "user", "content": user_message})
+        conversation.append({"role": "assistant", "content": clean_response})
+        session['conversation'] = conversation
+        session.modified = True
+
+        result = {'message': clean_response}
+        if fraud_result:
+            result['fraud_data'] = fraud_result
+
+        return jsonify(result)
+
+    except Exception as e:
+        print(f"Chat endpoint error: {e}")
+        return jsonify({'message': 'Something went wrong. Please try again.', 'fraud_data': None}), 200
+
+
+@app.route('/analyze', methods=['POST'])
+def analyze():
+    """
+    Direct transaction scoring endpoint — no LLM, just the model.
+    Used for API integrations and testing.
+
+    POST /analyze
+    {
+        "housing_status": 0,
+        "email_is_free": 1,
+        "foreign_request": 1,
+        "credit_risk_score": 80,
+        "amount": 75000,
+        "hour": 2
+    }
+    """
+    try:
+        transaction_info = request.json or {}
+        result = score_transaction(transaction_info)
+        return jsonify({
+            'status': 'success',
+            'risk_score': result['hybrid_score'],
+            'risk_level': result['risk_level'],
+            'verdict': result['verdict'],
+            'probability': result['probability'],
+            'signals': result['signals'],
+            'flags': result['flags'],
+            'explanation': result['explanation'],
+            'actions': result['actions'],
+            'threshold_used': result['threshold_used']
+        }), 200
+    except Exception as e:
+        print(f"Analyze endpoint error: {e}")
+        return jsonify({
+            'status': 'error',
+            'risk_score': 0,
+            'risk_level': 'Low — Clear',
+            'verdict': 'LEGITIMATE',
+            'probability': 0,
+            'signals': [],
+            'flags': [],
+            'explanation': 'Scoring unavailable. Please try again.',
+            'actions': ['allow transaction'],
+            'threshold_used': 10.0
+        }), 200
+
+
+@app.route('/analyze/batch', methods=['POST'])
+def analyze_batch():
+    """
+    Batch transaction scoring — processes multiple transactions at once.
+    Designed for bank/fintech use cases handling high-volume transaction feeds.
+
+    POST /analyze/batch
+    {
+        "transactions": [
+            {"id": "txn_001", "amount": 75000, "hour": 2, "foreign_request": 1},
+            {"id": "txn_002", "amount": 500, "email_is_free": 0},
+            ...
+        ]
     }
 
-    message_with_hint = user_message
-    if mode != 'transaction' and mode in mode_hints:
-        message_with_hint = user_message + mode_hints[mode]
+    Returns individual results + summary breakdown.
+    """
+    try:
+        body = request.json or {}
+        transactions = body.get('transactions', [])
 
-    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
-    messages.extend(conversation[-12:])
-    messages.append({"role": "user", "content": message_with_hint})
+        if not isinstance(transactions, list):
+            return jsonify({'status': 'error', 'message': 'transactions must be a list'}), 400
 
-    response = groq_client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=messages,
-        temperature=0.7,
-        max_tokens=800
-    )
+        if len(transactions) > 500:
+            return jsonify({'status': 'error', 'message': 'batch limit is 500 transactions'}), 400
 
-    raw_response = response.choices[0].message.content
-    print("RAW RESPONSE END:", raw_response[-300:])
+        results = []
+        summary = {'critical': 0, 'high': 0, 'medium': 0, 'low': 0, 'total': len(transactions)}
 
-    clean_response, transaction_info = extract_score_block(raw_response)
+        for txn in transactions:
+            if not isinstance(txn, dict):
+                continue
 
-    transaction_keywords = ['transaction', 'payment', 'transfer', 'charge', 'purchase',
-                            'fraud', 'suspicious', 'account', 'card', 'bank', 'money',
-                            'amount', 'sent', 'received', 'debit', 'credit', 'upi',
-                            'withdraw', 'deposit', 'loan', 'request', 'email', 'device']
-    message_lower = user_message.lower()
-    has_transaction_context = any(word in message_lower for word in transaction_keywords)
+            txn_id = txn.get('id', f"txn_{len(results) + 1}")
 
-    if not has_transaction_context:
-        transaction_info = None
+            try:
+                scored = score_transaction(txn)
+                risk_label = scored['risk_level'].split('—')[0].strip().lower()
 
-    fraud_result = None
-    if transaction_info:
-        try:
-            fraud_result = score_transaction(transaction_info)
-            verdict_emoji = "🔴" if fraud_result['verdict'] == 'FRAUD' else "🟢"
-            score_summary = f"\n\n{verdict_emoji} Risk Flag: {fraud_result['risk_level']} ({fraud_result['probability']}% model confidence)"
-            clean_response = clean_response + score_summary
-        except Exception as e:
-            print(f"Scoring error: {e}")
+                if risk_label in summary:
+                    summary[risk_label] += 1
+                else:
+                    summary['low'] += 1
 
-    conversation.append({"role": "user", "content": user_message})
-    conversation.append({"role": "assistant", "content": clean_response})
-    session['conversation'] = conversation
-    session.modified = True
+                results.append({
+                    'id': txn_id,
+                    'status': 'scored',
+                    'risk_score': scored['hybrid_score'],
+                    'risk_level': scored['risk_level'],
+                    'verdict': scored['verdict'],
+                    'probability': scored['probability'],
+                    'signals': scored['signals'],
+                    'flags': scored['flags'],
+                    'explanation': scored['explanation'],
+                    'actions': scored['actions']
+                })
+            except Exception as e:
+                print(f"Batch item error for {txn_id}: {e}")
+                results.append({
+                    'id': txn_id,
+                    'status': 'error',
+                    'risk_score': 0,
+                    'risk_level': 'Low — Clear',
+                    'verdict': 'LEGITIMATE',
+                    'probability': 0,
+                    'signals': [],
+                    'flags': [],
+                    'explanation': 'Scoring failed for this transaction.',
+                    'actions': ['allow transaction']
+                })
+                summary['low'] += 1
 
-    result = {'message': clean_response}
-    if fraud_result:
-        result['fraud_data'] = fraud_result
+        fraud_count = sum(1 for r in results if r.get('verdict') == 'FRAUD')
 
-    return jsonify(result)
+        return jsonify({
+            'status': 'success',
+            'processed': len(results),
+            'summary': {
+                'critical': summary['critical'],
+                'high': summary['high'],
+                'medium': summary['medium'],
+                'low': summary['low'],
+                'total': summary['total'],
+                'flagged': fraud_count
+            },
+            'results': results
+        }), 200
+
+    except Exception as e:
+        print(f"Batch endpoint error: {e}")
+        return jsonify({
+            'status': 'error',
+            'message': 'Batch processing failed. Please try again.',
+            'processed': 0,
+            'summary': {'critical': 0, 'high': 0, 'medium': 0, 'low': 0, 'total': 0, 'flagged': 0},
+            'results': []
+        }), 200
 
 
 @app.route('/clear', methods=['POST'])
