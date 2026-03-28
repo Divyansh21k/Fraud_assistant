@@ -1,1472 +1,1130 @@
 <!DOCTYPE html>
-<html lang="en">
+<html class="dark" lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FraudGuard — AI Fraud Detection</title>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        :root {
-            --bg: #0f0f0f;
-            --bg2: #161616;
-            --card: #1e1e1e;
-            --card2: #252525;
-            --card3: #2c2c2c;
-            --border: #2a2a2a;
-            --border2: #383838;
-            --amber: #e07b2a;
-            --amber2: #f59340;
-            --amber-dim: rgba(224,123,42,0.08);
-            --amber-glow: rgba(224,123,42,0.18);
-            --amber-pulse: rgba(224,123,42,0.35);
-            --green: #3ecf8e;
-            --green-dim: rgba(62,207,142,0.1);
-            --red: #f06565;
-            --red-dim: rgba(240,101,101,0.1);
-            --yellow: #f5c842;
-            --blue: #5b8def;
-            --blue-dim: rgba(91,141,239,0.1);
-            --text: #efefef;
-            --text-dim: #7a7a7a;
-            --text-muted: #3d3d3d;
-            --sans: 'DM Sans', sans-serif;
-            --mono: 'DM Mono', monospace;
-            --r: 12px;
-            --r-sm: 8px;
-            --r-xs: 5px;
-        }
-
-        body {
-            background: var(--bg);
-            color: var(--text);
-            font-family: var(--sans);
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            font-size: 14px;
-            -webkit-font-smoothing: antialiased;
-        }
-
-        /* ─── TOPBAR ─── */
-        .topbar {
-            background: var(--bg2);
-            border-bottom: 1px solid var(--border);
-            padding: 0 20px;
-            height: 54px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-shrink: 0;
-            z-index: 50;
-            position: relative;
-        }
-
-        .brand { display: flex; align-items: center; gap: 10px; }
-        .brand-icon {
-            width: 34px; height: 34px;
-            background: var(--amber);
-            border-radius: var(--r-xs);
-            display: flex; align-items: center; justify-content: center;
-            font-size: 13px; font-weight: 700; color: #111;
-            font-family: var(--mono);
-            box-shadow: 0 0 20px var(--amber-glow);
-            transition: box-shadow 0.3s;
-        }
-        .brand-icon:hover { box-shadow: 0 0 30px var(--amber-pulse); }
-        .brand-name { font-weight: 700; font-size: 15px; letter-spacing: -0.4px; }
-        .brand-ver {
-            font-size: 10px; color: var(--amber); background: var(--amber-dim);
-            border: 1px solid var(--amber-glow); padding: 2px 7px;
-            border-radius: 99px; font-family: var(--mono);
-        }
-
-        .topbar-nav { display: flex; gap: 2px; }
-        .nav-item {
-            padding: 6px 14px; font-size: 13px; color: var(--text-dim);
-            cursor: pointer; border-radius: 99px; transition: all 0.15s;
-            font-weight: 500; user-select: none;
-        }
-        .nav-item:hover { color: var(--text); background: var(--card); }
-        .nav-item.active { color: #111; background: var(--amber); font-weight: 600; }
-
-        .topbar-right { display: flex; align-items: center; gap: 10px; }
-        .live-pill {
-            display: flex; align-items: center; gap: 6px;
-            background: var(--card); border: 1px solid var(--border);
-            padding: 5px 12px; border-radius: 99px;
-        }
-        .live-dot {
-            width: 6px; height: 6px; border-radius: 50%; background: var(--green);
-            box-shadow: 0 0 8px var(--green); animation: livepulse 2.5s ease infinite;
-        }
-        .live-text { font-size: 11px; color: var(--text-dim); font-weight: 500; }
-        .clock { font-size: 12px; color: var(--text-muted); font-family: var(--mono); }
-
-        .mob-btn {
-            display: none; background: var(--card); border: 1px solid var(--border);
-            color: var(--text-dim); padding: 7px 11px; border-radius: var(--r-xs);
-            cursor: pointer; font-size: 16px; transition: all 0.15s;
-        }
-
-        /* ─── LAYOUT ─── */
-        .layout { flex: 1; display: flex; overflow: hidden; position: relative; }
-
-        /* ─── SIDEBAR ─── */
-        .sidebar {
-            width: 228px; background: var(--bg2);
-            border-right: 1px solid var(--border);
-            display: flex; flex-direction: column; flex-shrink: 0;
-            transition: transform 0.25s ease;
-        }
-        .sb-inner { padding: 14px 10px; flex: 1; overflow-y: auto; }
-        .sb-label {
-            font-size: 10px; font-weight: 600; letter-spacing: 1.2px;
-            text-transform: uppercase; color: var(--text-muted);
-            padding: 0 10px; margin: 14px 0 5px;
-        }
-        .sb-label:first-child { margin-top: 4px; }
-
-        .sb-btn {
-            width: 100%; background: none; border: none; color: var(--text-dim);
-            font-family: var(--sans); font-size: 13px; font-weight: 500;
-            padding: 9px 11px; text-align: left; cursor: pointer;
-            display: flex; align-items: center; gap: 9px;
-            transition: all 0.15s; border-radius: var(--r-sm);
-            margin-bottom: 1px;
-        }
-        .sb-btn:hover { color: var(--text); background: var(--card); }
-        .sb-btn.active { color: var(--amber); background: var(--amber-dim); }
-        .sb-btn.danger { color: var(--red); }
-        .sb-btn.danger:hover { background: var(--red-dim); }
-        .sb-icon { font-size: 14px; width: 18px; text-align: center; flex-shrink: 0; }
-
-        /* ─── LAST RESULT PANEL ─── */
-        .result-panel { border-top: 1px solid var(--border); padding: 14px; }
-        .result-panel-lbl {
-            font-size: 10px; font-weight: 600; letter-spacing: 1px;
-            text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px;
-        }
-        .result-card {
-            background: var(--card); border-radius: var(--r); padding: 14px;
-            display: none; border: 1px solid var(--border);
-            transition: border-color 0.4s;
-        }
-        .result-card.visible { display: block; }
-        .result-card.fraud-glow { border-color: rgba(240,101,101,0.4); box-shadow: 0 0 20px rgba(240,101,101,0.08); }
-        .result-card.safe-glow { border-color: rgba(62,207,142,0.4); box-shadow: 0 0 20px rgba(62,207,142,0.08); }
-
-        .result-prob-row { display: flex; align-items: baseline; gap: 6px; margin-bottom: 2px; }
-        .result-prob {
-            font-size: 38px; font-weight: 700; line-height: 1;
-            font-family: var(--mono); transition: color 0.4s;
-        }
-        .result-prob.low { color: var(--green); }
-        .result-prob.medium { color: var(--yellow); }
-        .result-prob.high, .result-prob.critical { color: var(--red); }
-        .result-prob-unit { font-size: 14px; color: var(--text-dim); }
-        .result-hybrid { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; font-family: var(--mono); }
-        .result-verdict { font-size: 11px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; color: var(--text-dim); margin-bottom: 10px; }
-        .result-bar-track { height: 4px; background: var(--card2); border-radius: 2px; margin-bottom: 10px; overflow: hidden; }
-        .result-bar-fill { height: 100%; border-radius: 2px; transition: width 0.8s cubic-bezier(0.4,0,0.2,1); }
-        .result-bar-fill.low { background: var(--green); }
-        .result-bar-fill.medium { background: var(--yellow); }
-        .result-bar-fill.high, .result-bar-fill.critical { background: var(--red); }
-        .result-flags { display: flex; flex-direction: column; gap: 4px; }
-        .result-flag { font-size: 11px; color: var(--text-dim); display: flex; gap: 6px; }
-        .result-flag-dot { color: var(--red); flex-shrink: 0; font-size: 9px; margin-top: 2px; }
-        .result-empty { font-size: 12px; color: var(--text-muted); line-height: 1.7; }
-
-        /* ─── CHAT PANEL ─── */
-        .chat-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
-
-        /* ─── STAT CARDS ─── */
-        .stat-row {
-            display: flex; gap: 1px; background: var(--border);
-            border-bottom: 1px solid var(--border); flex-shrink: 0;
-        }
-        .stat-card {
-            flex: 1; background: var(--bg2); padding: 13px 18px;
-            transition: background 0.2s;
-        }
-        .stat-card:hover { background: var(--card); }
-        .stat-lbl { font-size: 11px; color: var(--text-dim); font-weight: 500; margin-bottom: 3px; }
-        .stat-val {
-            font-size: 24px; font-weight: 700; line-height: 1;
-            font-family: var(--mono); transition: all 0.3s;
-        }
-        .stat-val.amber { color: var(--amber); }
-        .stat-val.red { color: var(--red); }
-        .stat-val.green { color: var(--green); }
-        .stat-sub { font-size: 10px; color: var(--text-muted); margin-top: 3px; }
-        .stat-card.pop .stat-val { transform: scale(1.15); }
-
-        /* ─── CHAT HEADER ─── */
-        .chat-header {
-            padding: 12px 20px; border-bottom: 1px solid var(--border);
-            display: flex; align-items: center; justify-content: space-between;
-            background: var(--bg2); flex-shrink: 0;
-        }
-        .chat-title { font-size: 13px; font-weight: 600; }
-        .chat-subtitle { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
-        .hdr-actions { display: flex; gap: 6px; }
-        .hdr-btn {
-            background: var(--card); border: 1px solid var(--border); color: var(--text-dim);
-            font-family: var(--sans); font-size: 12px; font-weight: 500;
-            padding: 5px 12px; cursor: pointer; border-radius: var(--r-xs); transition: all 0.15s;
-        }
-        .hdr-btn:hover { border-color: var(--border2); color: var(--text); }
-
-        /* ─── MESSAGES ─── */
-        .messages {
-            flex: 1; overflow-y: auto; padding: 22px 20px;
-            display: flex; flex-direction: column; gap: 2px;
-            scroll-behavior: smooth;
-        }
-        .messages::-webkit-scrollbar { width: 4px; }
-        .messages::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
-
-        /* ─── WELCOME ─── */
-        .welcome {
-            display: flex; flex-direction: column; justify-content: center;
-            height: 100%; max-width: 560px;
-            animation: slideUp 0.5s ease forwards;
-        }
-        .welcome-tag {
-            display: inline-flex; align-items: center; gap: 6px;
-            background: var(--amber-dim); border: 1px solid var(--amber-glow);
-            color: var(--amber); font-size: 11px; font-weight: 600;
-            padding: 4px 12px; border-radius: 99px; letter-spacing: 0.5px;
-            margin-bottom: 20px; width: fit-content;
-            animation: slideUp 0.5s ease 0.05s both;
-        }
-        .welcome-title {
-            font-size: 30px; font-weight: 700; line-height: 1.2;
-            letter-spacing: -0.7px; margin-bottom: 12px;
-            animation: slideUp 0.5s ease 0.1s both;
-        }
-        .welcome-title span { color: var(--amber); }
-        .welcome-desc {
-            font-size: 14px; color: var(--text-dim); line-height: 1.75;
-            margin-bottom: 26px; max-width: 440px;
-            animation: slideUp 0.5s ease 0.15s both;
-        }
-        .welcome-cards {
-            display: grid; grid-template-columns: repeat(2, 1fr); gap: 9px;
-            max-width: 490px; animation: slideUp 0.5s ease 0.2s both;
-        }
-        .welcome-card {
-            background: var(--card); border: 1px solid var(--border);
-            border-radius: var(--r); padding: 14px 15px;
-            transition: all 0.2s; cursor: default;
-        }
-        .welcome-card:hover { border-color: var(--amber-glow); transform: translateY(-2px); box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
-        .wc-icon { font-size: 19px; margin-bottom: 9px; }
-        .wc-title { font-size: 12px; font-weight: 600; margin-bottom: 4px; }
-        .wc-desc { font-size: 11px; color: var(--text-dim); line-height: 1.5; }
-
-        /* ─── MESSAGE ─── */
-        .message { display: flex; flex-direction: column; margin-bottom: 16px; animation: msgIn 0.2s ease forwards; }
-        .msg-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-        .msg-avatar {
-            width: 26px; height: 26px; border-radius: 7px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 11px; font-weight: 700; flex-shrink: 0;
-        }
-        .message.user .msg-avatar { background: var(--card2); color: var(--text-dim); border: 1px solid var(--border); }
-        .message.assistant .msg-avatar { background: var(--amber); color: #111; }
-        .msg-name { font-size: 12px; font-weight: 600; color: var(--text-dim); }
-        .msg-time { font-size: 11px; color: var(--text-muted); font-family: var(--mono); }
-        .msg-body {
-            padding: 13px 16px; border-radius: var(--r);
-            line-height: 1.75; font-size: 14px; white-space: pre-wrap;
-            max-width: 84%; margin-left: 34px; word-break: break-word;
-        }
-        .message.user .msg-body { background: var(--card); border: 1px solid var(--border); }
-        .message.assistant .msg-body {
-            background: var(--card); border: 1px solid var(--border);
-            border-left: 3px solid var(--amber);
-        }
-
-        /* ─── RESULT INLINE CARD ─── */
-        .inline-result {
-            margin-left: 34px; margin-top: 8px; max-width: 84%;
-            background: var(--card2); border: 1px solid var(--border);
-            border-radius: var(--r); overflow: hidden;
-            animation: slideUp 0.3s ease forwards;
-        }
-        .inline-result-header {
-            padding: 10px 14px; display: flex; align-items: center;
-            justify-content: space-between; border-bottom: 1px solid var(--border);
-        }
-        .inline-result-header.fraud { background: rgba(240,101,101,0.08); border-color: rgba(240,101,101,0.2); }
-        .inline-result-header.legitimate { background: rgba(62,207,142,0.08); border-color: rgba(62,207,142,0.2); }
-        .inline-verdict {
-            font-size: 12px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
-            display: flex; align-items: center; gap: 7px;
-        }
-        .inline-verdict.fraud { color: var(--red); }
-        .inline-verdict.legitimate { color: var(--green); }
-        .inline-scores { display: flex; gap: 14px; font-size: 11px; color: var(--text-dim); font-family: var(--mono); }
-        .inline-scores span b { color: var(--text); }
-        .inline-result-body { padding: 12px 14px; }
-        .inline-explanation {
-            font-size: 12px; color: var(--text-dim); line-height: 1.65;
-            margin-bottom: 10px; font-style: italic;
-        }
-        .inline-actions { display: flex; flex-wrap: wrap; gap: 5px; }
-        .inline-action {
-            font-size: 11px; font-weight: 500; padding: 3px 10px;
-            border-radius: 99px; border: 1px solid;
-        }
-        .inline-action.block { color: var(--red); border-color: rgba(240,101,101,0.3); background: var(--red-dim); }
-        .inline-action.review { color: var(--yellow); border-color: rgba(245,200,66,0.3); background: rgba(245,200,66,0.08); }
-        .inline-action.allow { color: var(--green); border-color: rgba(62,207,142,0.3); background: var(--green-dim); }
-        .inline-action.monitor { color: var(--blue); border-color: rgba(91,141,239,0.3); background: var(--blue-dim); }
-        .inline-action.otp { color: var(--amber); border-color: var(--amber-glow); background: var(--amber-dim); }
-
-        /* ─── TYPING ─── */
-        .typing-wrap { display: flex; align-items: center; margin-bottom: 16px; margin-left: 34px; }
-        .typing-dots {
-            display: flex; gap: 5px; background: var(--card);
-            border: 1px solid var(--border); border-left: 3px solid var(--amber);
-            padding: 11px 15px; border-radius: var(--r);
-        }
-        .typing-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--amber); animation: tdot 1.2s ease infinite; opacity: 0.5; }
-        .typing-dot:nth-child(2) { animation-delay: 0.15s; }
-        .typing-dot:nth-child(3) { animation-delay: 0.3s; }
-
-        /* ─── INPUT ─── */
-        .input-section {
-            border-top: 1px solid var(--border); background: var(--bg2);
-            flex-shrink: 0; padding: 14px 20px;
-        }
-        .img-bar {
-            display: none; align-items: center; gap: 10px;
-            background: var(--amber-dim); border: 1px solid var(--amber-glow);
-            border-radius: var(--r-sm); padding: 8px 12px; margin-bottom: 10px;
-        }
-        .img-bar.visible { display: flex; }
-        .img-bar img { height: 34px; border-radius: 4px; }
-        .img-bar span { font-size: 11px; color: var(--amber); font-weight: 500; flex: 1; }
-        .img-remove {
-            background: none; border: 1px solid var(--amber-glow); color: var(--text-dim);
-            font-size: 11px; padding: 3px 8px; cursor: pointer;
-            font-family: var(--sans); border-radius: var(--r-xs); transition: all 0.15s;
-        }
-        .img-remove:hover { border-color: var(--red); color: var(--red); }
-
-        .input-box {
-            background: var(--card); border: 1px solid var(--border2);
-            border-radius: var(--r); transition: all 0.15s; overflow: hidden;
-        }
-        .input-box:focus-within {
-            border-color: var(--amber);
-            box-shadow: 0 0 0 3px var(--amber-dim);
-        }
-        .input-row { display: flex; align-items: flex-end; }
-        #msgInput {
-            flex: 1; background: none; border: none; color: var(--text);
-            font-family: var(--sans); font-size: 14px; padding: 13px 16px;
-            resize: none; outline: none; min-height: 48px; max-height: 130px; line-height: 1.55;
-        }
-        #msgInput::placeholder { color: var(--text-muted); }
-        .input-btns { display: flex; align-items: center; gap: 5px; padding: 9px 11px; }
-        .attach-btn {
-            background: none; border: none; color: var(--text-muted);
-            font-size: 16px; cursor: pointer; padding: 6px;
-            border-radius: var(--r-xs); transition: all 0.15s;
-        }
-        .attach-btn:hover { color: var(--amber); }
-        .send-btn {
-            background: var(--amber); border: none; color: #111;
-            font-family: var(--sans); font-size: 13px; font-weight: 700;
-            padding: 9px 20px; cursor: pointer; border-radius: var(--r-xs);
-            transition: all 0.15s; letter-spacing: 0.1px;
-        }
-        .send-btn:hover { background: var(--amber2); transform: translateY(-1px); box-shadow: 0 4px 15px var(--amber-glow); }
-        .send-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
-        .input-footer { display: flex; align-items: center; justify-content: space-between; padding: 7px 2px 0; }
-        .input-hint { font-size: 11px; color: var(--text-muted); }
-        .mode-badge {
-            font-size: 10px; font-weight: 600; letter-spacing: 0.5px;
-            color: var(--amber); background: var(--amber-dim);
-            border: 1px solid var(--amber-glow);
-            padding: 2px 9px; border-radius: 99px; text-transform: uppercase;
-        }
-
-        /* ─── OVERLAY PANELS ─── */
-        .overlay {
-            position: absolute; top: 0; right: 0; bottom: 0; width: 400px;
-            background: var(--bg2); border-left: 1px solid var(--border);
-            display: flex; flex-direction: column;
-            transform: translateX(100%);
-            transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-            z-index: 40;
-        }
-        .overlay.open { transform: translateX(0); }
-        .overlay-hdr {
-            padding: 15px 18px; border-bottom: 1px solid var(--border);
-            display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
-        }
-        .overlay-title { font-size: 14px; font-weight: 700; }
-        .overlay-sub { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
-        .overlay-close {
-            background: var(--card); border: 1px solid var(--border); color: var(--text-dim);
-            font-family: var(--sans); font-size: 12px; font-weight: 500;
-            padding: 5px 11px; cursor: pointer; border-radius: var(--r-xs); transition: all 0.15s;
-        }
-        .overlay-close:hover { color: var(--text); border-color: var(--border2); }
-        .overlay-body { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 9px; }
-        .overlay-body::-webkit-scrollbar { width: 4px; }
-        .overlay-body::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
-        .overlay-empty { font-size: 13px; color: var(--text-muted); text-align: center; margin-top: 60px; line-height: 2; }
-
-        /* ─── HISTORY ─── */
-        .hist-item {
-            background: var(--card); border: 1px solid var(--border);
-            border-radius: var(--r); overflow: hidden; cursor: pointer; transition: all 0.15s;
-        }
-        .hist-item:hover { border-color: var(--border2); transform: translateY(-1px); }
-        .hist-hdr { padding: 9px 13px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
-        .hist-time { font-size: 11px; color: var(--text-dim); font-family: var(--mono); }
-        .hist-badge { font-size: 10px; font-weight: 700; padding: 2px 9px; border-radius: 99px; text-transform: uppercase; letter-spacing: 0.4px; }
-        .hist-badge.fraud { background: var(--red-dim); color: var(--red); border: 1px solid rgba(240,101,101,0.2); }
-        .hist-badge.legitimate { background: var(--green-dim); color: var(--green); border: 1px solid rgba(62,207,142,0.2); }
-        .hist-badge.info { background: var(--amber-dim); color: var(--amber); border: 1px solid var(--amber-glow); }
-        .hist-body { padding: 11px 13px; }
-        .hist-user { font-size: 12px; color: var(--text-dim); margin-bottom: 5px; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        .hist-resp { font-size: 12px; line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-        .hist-score { margin-top: 9px; padding-top: 9px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 7px; font-size: 11px; color: var(--text-dim); }
-        .hist-score-val { font-weight: 700; font-family: var(--mono); }
-        .hist-score-val.low { color: var(--green); }
-        .hist-score-val.high, .hist-score-val.critical { color: var(--red); }
-        .hist-score-val.medium { color: var(--yellow); }
-
-        /* ─── REPORT ─── */
-        .rpt-verdict {
-            border-radius: var(--r); padding: 15px;
-            display: flex; align-items: center; gap: 13px;
-        }
-        .rpt-verdict.fraud { background: var(--red-dim); border: 1px solid rgba(240,101,101,0.25); }
-        .rpt-verdict.legitimate { background: var(--green-dim); border: 1px solid rgba(62,207,142,0.25); }
-        .rpt-verdict-icon { font-size: 28px; }
-        .rpt-verdict-lbl { font-size: 17px; font-weight: 700; }
-        .rpt-verdict-lbl.fraud { color: var(--red); }
-        .rpt-verdict-lbl.legitimate { color: var(--green); }
-        .rpt-verdict-sub { font-size: 12px; color: var(--text-dim); margin-top: 3px; }
-
-        .rpt-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; }
-        .rpt-card-hdr { padding: 9px 13px; border-bottom: 1px solid var(--border); font-size: 10px; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase; color: var(--text-dim); }
-        .rpt-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 13px; border-bottom: 1px solid var(--border); font-size: 13px; }
-        .rpt-row:last-child { border-bottom: none; }
-        .rpt-row-lbl { color: var(--text-dim); }
-        .rpt-row-val { font-weight: 600; font-family: var(--mono); font-size: 12px; }
-        .rpt-row-val.safe { color: var(--green); }
-        .rpt-row-val.danger { color: var(--red); }
-        .rpt-row-val.warn { color: var(--yellow); }
-
-        .rpt-explanation {
-            padding: 12px 13px; font-size: 12px; color: var(--text-dim);
-            line-height: 1.7; font-style: italic; border-bottom: 1px solid var(--border);
-        }
-        .rpt-actions { padding: 12px 13px; display: flex; flex-wrap: wrap; gap: 6px; }
-
-        .rpt-flag { display: flex; gap: 8px; align-items: flex-start; padding: 8px 13px; border-bottom: 1px solid var(--border); font-size: 12px; color: var(--text-dim); }
-        .rpt-flag:last-child { border-bottom: none; }
-        .rpt-flag-dot { color: var(--red); font-weight: 700; flex-shrink: 0; }
-
-        .rpt-disclaimer { font-size: 11px; color: var(--text-muted); line-height: 1.7; padding: 12px 13px; }
-        .rpt-ts { font-size: 11px; color: var(--text-muted); text-align: right; font-family: var(--mono); }
-
-        /* ─── MOBILE ─── */
-        .sb-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 29; }
-
-        @media (max-width: 768px) {
-            .topbar { padding: 0 14px; }
-            .topbar-nav { display: none; }
-            .brand-ver { display: none; }
-            .clock { display: none; }
-            .mob-btn { display: flex; align-items: center; }
-            .stat-row { display: none; }
-            .sidebar { position: fixed; left: 0; top: 54px; bottom: 0; z-index: 30; transform: translateX(-100%); box-shadow: 8px 0 30px rgba(0,0,0,0.5); }
-            .sidebar.open { transform: translateX(0); }
-            .sb-backdrop.visible { display: block; }
-            .overlay { width: 100%; }
-            .messages { padding: 14px; }
-            .msg-body { max-width: 95%; font-size: 13px; }
-            .inline-result { max-width: 95%; }
-            .welcome-title { font-size: 24px; }
-            .welcome-cards { grid-template-columns: 1fr; }
-            .input-section { padding: 12px 14px; }
-            .chat-header { padding: 11px 14px; }
-        }
-        @media (max-width: 480px) {
-            .live-text { display: none; }
-            .welcome-title { font-size: 20px; }
-        }
-
-        /* ─── ANIMATIONS ─── */
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(12px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes msgIn {
-            from { opacity: 0; transform: translateY(6px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes livepulse {
-            0%, 100% { opacity: 0.4; transform: scale(1); }
-            50% { opacity: 1; transform: scale(1.2); }
-        }
-        @keyframes tdot {
-            0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
-            30% { transform: translateY(-5px); opacity: 1; }
-        }
-        @keyframes numPop {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.25); }
-            100% { transform: scale(1); }
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes rowIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* ─── BATCH PANEL ─── */
-        .batch-panel {
-            position: absolute; inset: 0;
-            background: var(--bg);
-            display: flex; flex-direction: column;
-            transform: translateY(100%);
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            z-index: 45; overflow: hidden;
-        }
-        .batch-panel.open { transform: translateY(0); }
-
-        .batch-hdr {
-            background: var(--bg2); border-bottom: 1px solid var(--border);
-            padding: 14px 20px; display: flex; align-items: center;
-            justify-content: space-between; flex-shrink: 0;
-        }
-        .batch-hdr-left { display: flex; align-items: center; gap: 12px; }
-        .batch-title { font-size: 14px; font-weight: 700; }
-        .batch-sub { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
-        .batch-close {
-            background: var(--card); border: 1px solid var(--border); color: var(--text-dim);
-            font-family: var(--sans); font-size: 12px; font-weight: 500;
-            padding: 6px 14px; cursor: pointer; border-radius: var(--r-xs); transition: all 0.15s;
-        }
-        .batch-close:hover { color: var(--text); border-color: var(--border2); }
-
-        .batch-body { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
-        .batch-body::-webkit-scrollbar { width: 4px; }
-        .batch-body::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
-
-        /* INPUT TABS */
-        .b-tabs { display: flex; gap: 2px; background: var(--card); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 3px; width: fit-content; }
-        .b-tab { padding: 6px 16px; font-size: 12px; font-weight: 500; color: var(--text-dim); background: none; border: none; cursor: pointer; border-radius: var(--r-xs); transition: all 0.15s; font-family: var(--sans); }
-        .b-tab.active { background: var(--amber); color: #111; font-weight: 700; }
-        .b-tab:hover:not(.active) { color: var(--text); }
-        .b-tab-content { display: none; }
-        .b-tab-content.active { display: block; }
-
-        /* FORM */
-        .b-form-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; }
-        .b-form-hdr { padding: 12px 16px; border-bottom: 1px solid var(--border); }
-        .b-form-title { font-size: 12px; font-weight: 600; }
-        .b-form-sub { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
-        .b-form-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 16px; }
-        .b-fg { display: flex; flex-direction: column; gap: 5px; }
-        .b-lbl { font-size: 10px; font-weight: 600; color: var(--text-dim); letter-spacing: 0.3px; text-transform: uppercase; }
-        .b-input, .b-select {
-            background: var(--card); border: 1px solid var(--border2); color: var(--text);
-            font-family: var(--sans); font-size: 12px; padding: 7px 10px;
-            border-radius: var(--r-xs); outline: none; transition: border-color 0.15s; width: 100%;
-        }
-        .b-input:focus, .b-select:focus { border-color: var(--amber); box-shadow: 0 0 0 2px var(--amber-dim); }
-        .b-select option { background: var(--card2); }
-        .b-hint { font-size: 10px; color: var(--text-muted); }
-        .b-form-footer { padding: 12px 16px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
-        .b-add-btn { background: var(--amber); border: none; color: #111; font-family: var(--sans); font-size: 12px; font-weight: 700; padding: 8px 18px; cursor: pointer; border-radius: var(--r-xs); transition: all 0.15s; }
-        .b-add-btn:hover { background: var(--amber2); }
-        .b-ghost-btn { background: none; border: 1px solid var(--border); color: var(--text-dim); font-family: var(--sans); font-size: 12px; padding: 8px 14px; cursor: pointer; border-radius: var(--r-xs); transition: all 0.15s; }
-        .b-ghost-btn:hover { color: var(--text); border-color: var(--border2); }
-        .b-queue-count { font-size: 12px; color: var(--text-dim); margin-left: auto; }
-        .b-queue-count span { color: var(--amber); font-weight: 700; font-family: var(--mono); }
-
-        /* QUEUE */
-        .b-queue { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; display: none; }
-        .b-queue.visible { display: block; }
-        .b-queue-hdr { padding: 10px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
-        .b-queue-lbl { font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; }
-        .b-table { width: 100%; border-collapse: collapse; }
-        .b-table th { padding: 8px 12px; text-align: left; font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; border-bottom: 1px solid var(--border); }
-        .b-table td { padding: 9px 12px; font-size: 11px; color: var(--text-dim); border-bottom: 1px solid var(--border); font-family: var(--mono); }
-        .b-table tr:last-child td { border-bottom: none; }
-        .b-table tr:hover td { background: var(--card); }
-        .b-del { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 13px; padding: 2px 5px; border-radius: 4px; transition: all 0.15s; }
-        .b-del:hover { color: var(--red); background: var(--red-dim); }
-        .b-empty { padding: 20px; text-align: center; font-size: 12px; color: var(--text-muted); }
-
-        /* CSV */
-        .b-drop {
-            border: 2px dashed var(--border2); border-radius: var(--r);
-            padding: 36px 20px; text-align: center; cursor: pointer;
-            transition: all 0.2s; background: var(--card);
-        }
-        .b-drop:hover, .b-drop.drag { border-color: var(--amber); background: var(--amber-dim); }
-        .b-drop-icon { font-size: 28px; margin-bottom: 8px; }
-        .b-drop-title { font-size: 14px; font-weight: 600; margin-bottom: 5px; }
-        .b-drop-sub { font-size: 12px; color: var(--text-dim); margin-bottom: 12px; }
-        .b-browse { background: var(--amber); border: none; color: #111; font-family: var(--sans); font-size: 12px; font-weight: 700; padding: 7px 16px; cursor: pointer; border-radius: var(--r-xs); }
-        .b-csv-loaded { display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: var(--green-dim); border: 1px solid rgba(62,207,142,0.2); border-radius: var(--r-sm); margin-top: 12px; font-size: 12px; color: var(--green); font-weight: 500; }
-        .b-csv-clear { background: none; border: 1px solid rgba(62,207,142,0.2); color: var(--green); font-size: 11px; padding: 3px 9px; cursor: pointer; border-radius: var(--r-xs); margin-left: auto; font-family: var(--sans); }
-        .b-fmt { margin-top: 14px; background: var(--card2); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 12px 14px; }
-        .b-fmt-lbl { font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 7px; }
-        .b-fmt pre { font-family: var(--mono); font-size: 10px; color: var(--amber); overflow-x: auto; line-height: 1.6; }
-
-        /* RUN BAR */
-        .b-run-bar { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
-        .b-run-btn { background: var(--amber); border: none; color: #111; font-family: var(--sans); font-size: 14px; font-weight: 700; padding: 11px 28px; cursor: pointer; border-radius: var(--r-sm); transition: all 0.2s; display: flex; align-items: center; gap: 7px; }
-        .b-run-btn:hover { background: var(--amber2); transform: translateY(-1px); box-shadow: 0 4px 18px var(--amber-glow); }
-        .b-run-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
-        .b-ready { font-size: 13px; color: var(--text-dim); }
-        .b-ready span { color: var(--amber); font-weight: 700; font-family: var(--mono); }
-        .b-prog { height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; display: none; }
-        .b-prog-fill { height: 100%; background: var(--amber); border-radius: 2px; transition: width 0.4s ease; width: 0%; }
-
-        /* SUMMARY */
-        .b-summary { display: none; }
-        .b-summary.visible { display: block; }
-        .b-sum-title { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 12px; }
-        .b-sum-cards { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 16px; }
-        .b-sc { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); padding: 13px 15px; transition: all 0.2s; }
-        .b-sc:hover { transform: translateY(-2px); border-color: var(--border2); }
-        .b-sc-lbl { font-size: 10px; color: var(--text-dim); font-weight: 500; margin-bottom: 5px; }
-        .b-sc-val { font-size: 26px; font-weight: 700; font-family: var(--mono); line-height: 1; }
-        .b-sc-val.amber { color: var(--amber); }
-        .b-sc-val.red { color: var(--red); }
-        .b-sc-val.yellow { color: var(--yellow); }
-        .b-sc-val.blue { color: var(--blue); }
-        .b-sc-val.green { color: var(--green); }
-        .b-sc-sub { font-size: 10px; color: var(--text-muted); margin-top: 3px; }
-
-        /* RESULTS TABLE */
-        .b-res-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; }
-        .b-res-hdr { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
-        .b-res-title { font-size: 13px; font-weight: 600; }
-        .b-res-actions { display: flex; gap: 6px; }
-        .b-exp-btn { background: var(--card); border: 1px solid var(--border); color: var(--text-dim); font-family: var(--sans); font-size: 11px; font-weight: 500; padding: 5px 12px; cursor: pointer; border-radius: var(--r-xs); transition: all 0.15s; }
-        .b-exp-btn:hover { color: var(--text); border-color: var(--border2); }
-        .b-res-wrap { overflow-x: auto; }
-        .b-res-table { width: 100%; border-collapse: collapse; min-width: 760px; }
-        .b-res-table th { padding: 9px 13px; text-align: left; font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; border-bottom: 1px solid var(--border); background: var(--card); white-space: nowrap; }
-        .b-res-table td { padding: 10px 13px; font-size: 12px; border-bottom: 1px solid var(--border); }
-        .b-res-table tr:last-child td { border-bottom: none; }
-        .b-res-table tr { transition: background 0.15s; }
-        .b-res-table tr:hover td { background: var(--card); }
-        .b-res-table tr.frow { background: rgba(240,101,101,0.03); }
-        .b-vbadge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 99px; text-transform: uppercase; letter-spacing: 0.4px; white-space: nowrap; }
-        .b-vbadge.fraud { background: var(--red-dim); color: var(--red); border: 1px solid rgba(240,101,101,0.2); }
-        .b-vbadge.legitimate { background: var(--green-dim); color: var(--green); border: 1px solid rgba(62,207,142,0.2); }
-        .b-rbadge { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 99px; white-space: nowrap; }
-        .b-rbadge.critical { background: var(--red-dim); color: var(--red); }
-        .b-rbadge.high { background: rgba(245,200,66,0.08); color: var(--yellow); }
-        .b-rbadge.medium { background: var(--blue-dim); color: var(--blue); }
-        .b-rbadge.low { background: var(--green-dim); color: var(--green); }
-        .b-score { font-family: var(--mono); font-weight: 700; }
-        .b-score.danger { color: var(--red); }
-        .b-score.warn { color: var(--yellow); }
-        .b-score.safe { color: var(--green); }
-        .b-apills { display: flex; flex-wrap: wrap; gap: 3px; }
-        .b-apill { font-size: 10px; font-weight: 500; padding: 2px 7px; border-radius: 99px; border: 1px solid; white-space: nowrap; }
-        .b-apill.block { color: var(--red); border-color: rgba(240,101,101,0.3); }
-        .b-apill.otp { color: var(--amber); border-color: var(--amber-glow); }
-        .b-apill.review { color: var(--yellow); border-color: rgba(245,200,66,0.3); }
-        .b-apill.monitor { color: var(--blue); border-color: rgba(91,141,239,0.3); }
-        .b-apill.allow { color: var(--green); border-color: rgba(62,207,142,0.3); }
-        .b-expl { font-size: 11px; color: var(--text-dim); max-width: 240px; line-height: 1.5; }
-        .b-id { font-family: var(--mono); font-size: 11px; color: var(--text-muted); }
-        .b-spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid var(--border2); border-top-color: var(--amber); border-radius: 50%; animation: spin 0.7s linear infinite; margin-right: 8px; vertical-align: middle; }
-
-        @media (max-width: 768px) {
-            .b-form-grid { grid-template-columns: repeat(2, 1fr); }
-            .b-sum-cards { grid-template-columns: repeat(3, 1fr); }
-            .batch-body { padding: 14px; }
-        }
-        @media (max-width: 480px) {
-            .b-form-grid { grid-template-columns: 1fr; }
-            .b-sum-cards { grid-template-columns: repeat(2, 1fr); }
-        }
-    </style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>FraudGuard | Forensic Suite</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script>
+tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        "bg":        "#131313",
+        "bg2":       "#1c1b1b",
+        "bg3":       "#201f1f",
+        "bg4":       "#2a2a2a",
+        "bg5":       "#353534",
+        "border-c":  "#554337",
+        "amber":     "#e07b2a",
+        "amber-lt":  "#ffb786",
+        "amber-pale":"#ffdcc6",
+        "red":       "#ffb4ab",
+        "red-c":     "#93000a",
+        "on-red":    "#690005",
+        "txt":       "#e5e2e1",
+        "txt-dim":   "#a38c7e",
+        "txt-muted": "#554337",
+      },
+      fontFamily: {
+        headline: ["Inter"],
+        body:     ["Inter"],
+        label:    ["Space Grotesk"],
+      },
+      borderRadius: { DEFAULT:"0.25rem", lg:"0.5rem", xl:"0.75rem", "2xl":"1rem", "3xl":"1.5rem", full:"9999px" },
+    }
+  }
+}
+</script>
+<style>
+  * { box-sizing: border-box; }
+  .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; }
+  .fill-icon { font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24; }
+  .glass { background: rgba(32,31,31,0.7); backdrop-filter: blur(12px); }
+  ::-webkit-scrollbar { width:5px; }
+  ::-webkit-scrollbar-track { background:#131313; }
+  ::-webkit-scrollbar-thumb { background:#2a2a2a; border-radius:10px; }
+  .amber-grad { background: linear-gradient(to bottom, #ffb786, #e07b2a); }
+  .page { display:none; }
+  .page.active { display:block; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes pulse-glow { 0%,100% { box-shadow:0 0 0 0 rgba(224,123,42,0); } 50% { box-shadow:0 0 20px 4px rgba(224,123,42,0.3); } }
+  .spinner { display:inline-block; width:18px; height:18px; border:2px solid rgba(255,183,134,0.2); border-top-color:#ffb786; border-radius:50%; animation:spin 0.7s linear infinite; }
+  .animate-fadeup { animation: fadeUp 0.3s ease forwards; }
+  .gauge-circle { transition: stroke-dashoffset 1s cubic-bezier(0.4,0,0.2,1); }
+  .nav-link { transition: all 0.2s ease; }
+  .nav-link:hover { transform: translateX(3px); }
+  input, textarea, select { color-scheme: dark; }
+</style>
 </head>
-<body>
+<body class="bg-bg text-txt font-body antialiased" style="overflow:hidden;height:100vh;display:flex;">
 
-<div class="topbar">
-    <div style="display:flex;align-items:center;gap:20px">
-        <div class="brand">
-            <div class="brand-icon">FG</div>
-            <div class="brand-name">FraudGuard</div>
-            <div class="brand-ver">v2.1</div>
-        </div>
-        <nav class="topbar-nav">
-            <div class="nav-item active" id="navAnalysis" onclick="switchView('analysis')">Analysis</div>
-            <div class="nav-item" id="navHistory" onclick="switchView('history')">History</div>
-            <div class="nav-item" id="navReports" onclick="switchView('reports')">Reports</div>
-            <div class="nav-item" id="navBatch" onclick="switchView('batch')">⚡ Batch</div>
-        </nav>
-    </div>
-    <div class="topbar-right">
-        <div class="live-pill">
-            <div class="live-dot"></div>
-            <div class="live-text">Model Active</div>
-        </div>
-        <div class="clock" id="clock">--:--:--</div>
-        <button class="mob-btn" onclick="toggleSidebar()">☰</button>
-    </div>
-</div>
-
-<div class="sb-backdrop" id="sbBackdrop" onclick="closeSidebar()"></div>
-
-<div class="layout">
-    <!-- SIDEBAR -->
-    <div class="sidebar" id="sidebar">
-        <div class="sb-inner">
-            <div class="sb-label">Analyse</div>
-            <button class="sb-btn active" id="btnTxn" onclick="setMode('transaction')"><span class="sb-icon">🔍</span> Transaction Analysis</button>
-            <button class="sb-btn" id="btnEdu" onclick="setMode('education')"><span class="sb-icon">📚</span> Fraud Education</button>
-            <button class="sb-btn" id="btnPrev" onclick="setMode('prevention')"><span class="sb-icon">🛡️</span> Prevention Advice</button>
-            <button class="sb-btn" id="btnRpt" onclick="setMode('report')"><span class="sb-icon">📊</span> Risk Report</button>
-
-            <div class="sb-label">Tools</div>
-            <button class="sb-btn" onclick="switchView('batch')" style="color:var(--amber);background:var(--amber-dim);border:1px solid var(--amber-glow)"><span class="sb-icon">⚡</span> Batch Analysis</button>
-            <button class="sb-btn" onclick="document.getElementById('imgInput').click()"><span class="sb-icon">📎</span> Upload Screenshot</button>
-            <button class="sb-btn" onclick="switchView('history')"><span class="sb-icon">🕐</span> Session History</button>
-            <button class="sb-btn" onclick="switchView('reports')"><span class="sb-icon">📋</span> View Report</button>
-
-            <div class="sb-label">Session</div>
-            <button class="sb-btn" onclick="exportChat()"><span class="sb-icon">⬇️</span> Export Session</button>
-            <button class="sb-btn danger" onclick="clearChat()"><span class="sb-icon">🗑️</span> Clear Session</button>
-        </div>
-
-        <div class="result-panel">
-            <div class="result-panel-lbl">Last Result</div>
-            <div class="result-card" id="resultCard">
-                <div class="result-prob-row">
-                    <div class="result-prob" id="resultProb">0</div>
-                    <div class="result-prob-unit">%</div>
-                </div>
-                <div class="result-hybrid" id="resultHybrid">hybrid score: —</div>
-                <div class="result-verdict" id="resultVerdict">—</div>
-                <div class="result-bar-track"><div class="result-bar-fill" id="resultBar" style="width:0%"></div></div>
-                <div class="result-flags" id="resultFlags"></div>
-            </div>
-            <div class="result-empty" id="resultEmpty">No transaction analysed yet.</div>
-        </div>
+<!-- ═══════════════════════════════════════════
+     SIDEBAR
+════════════════════════════════════════════ -->
+<aside id="sidebar" class="w-64 flex-shrink-0 flex flex-col border-r border-amber/10 bg-bg h-screen overflow-y-auto z-50">
+  <!-- Brand -->
+  <div class="p-6 pb-4">
+    <div class="flex items-center gap-3 mb-8">
+      <div class="w-10 h-10 rounded-lg amber-grad flex items-center justify-center shadow-lg shadow-amber/20">
+        <span class="material-symbols-outlined fill-icon text-bg text-xl">shield_person</span>
+      </div>
+      <div>
+        <h1 class="text-amber-lt font-bold font-headline text-lg tracking-tight leading-none">FraudGuard</h1>
+        <p class="font-label text-[0.6rem] uppercase tracking-widest text-txt-dim mt-0.5">Forensic Suite V2.1</p>
+      </div>
     </div>
 
-    <!-- CHAT PANEL -->
-    <div class="chat-panel">
-        <div class="stat-row">
-            <div class="stat-card">
-                <div class="stat-lbl">Analysed</div>
-                <div class="stat-val amber" id="statA">0</div>
-                <div class="stat-sub">this session</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-lbl">Flagged</div>
-                <div class="stat-val red" id="statF">0</div>
-                <div class="stat-sub">suspicious</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-lbl">Cleared</div>
-                <div class="stat-val green" id="statC">0</div>
-                <div class="stat-sub">legitimate</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-lbl">Avg Score</div>
-                <div class="stat-val" id="statAvg" style="font-size:18px;padding-top:3px">—</div>
-                <div class="stat-sub">hybrid</div>
-            </div>
-        </div>
+    <!-- New Analysis CTA -->
+    <button onclick="showPage('analysis'); document.getElementById('txInput').value=''; resetResults();"
+      class="w-full amber-grad text-bg py-3 px-4 rounded-lg font-bold font-label text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-amber/20 hover:brightness-110 active:scale-95 transition-all mb-6">
+      <span class="material-symbols-outlined fill-icon text-sm">add_circle</span>
+      New Analysis
+    </button>
 
-        <div class="chat-header">
+    <!-- Nav -->
+    <nav class="space-y-0.5">
+      <button onclick="showPage('analysis')" id="nav-analysis"
+        class="nav-link w-full flex items-center gap-3 px-4 py-3 rounded-lg font-label text-xs font-bold uppercase tracking-widest transition-all text-left">
+        <span class="material-symbols-outlined text-xl">analytics</span> Analysis
+      </button>
+      <button onclick="showPage('history')" id="nav-history"
+        class="nav-link w-full flex items-center gap-3 px-4 py-3 rounded-lg font-label text-xs font-bold uppercase tracking-widest transition-all text-left text-txt opacity-60 hover:opacity-100 hover:bg-bg2">
+        <span class="material-symbols-outlined text-xl">history</span> History
+      </button>
+      <button onclick="showPage('batch')" id="nav-batch"
+        class="nav-link w-full flex items-center gap-3 px-4 py-3 rounded-lg font-label text-xs font-bold uppercase tracking-widest transition-all text-left text-txt opacity-60 hover:opacity-100 hover:bg-bg2">
+        <span class="material-symbols-outlined text-xl">layers</span> Batch
+      </button>
+      <button onclick="showPage('reports')" id="nav-reports"
+        class="nav-link w-full flex items-center gap-3 px-4 py-3 rounded-lg font-label text-xs font-bold uppercase tracking-widest transition-all text-left text-txt opacity-60 hover:opacity-100 hover:bg-bg2">
+        <span class="material-symbols-outlined text-xl">assessment</span> Reports
+      </button>
+    </nav>
+  </div>
+
+  <!-- Bottom links -->
+  <div class="mt-auto p-4 border-t border-amber/10">
+    <div class="flex items-center gap-2 px-4 py-2">
+      <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+      <span class="font-label text-[0.65rem] uppercase tracking-widest text-txt-dim">Engine Active · XGBoost v2</span>
+    </div>
+    <div class="px-4 py-2 font-label text-[0.65rem] uppercase tracking-widest text-txt-muted">NeurIPS 2022 · 1M Transactions</div>
+  </div>
+</aside>
+
+<!-- ═══════════════════════════════════════════
+     MAIN CONTENT
+════════════════════════════════════════════ -->
+<main class="flex-1 flex flex-col overflow-hidden">
+
+  <!-- Top Bar -->
+  <header class="flex-shrink-0 flex justify-between items-center px-8 py-4 border-b border-amber/10 bg-bg">
+    <div>
+      <h2 class="text-2xl font-black tracking-tighter text-txt font-headline" id="pageTitle">Fraud Analysis</h2>
+      <p class="text-txt-dim text-xs font-label uppercase tracking-widest mt-0.5" id="pageSubtitle">Real-time forensic inspection engine</p>
+    </div>
+    <div class="flex items-center gap-4">
+      <!-- Live stats bar -->
+      <div class="hidden md:flex items-center gap-4 text-xs font-label uppercase tracking-widest text-txt-dim">
+        <span>Analysed: <span class="text-amber-lt font-bold" id="hdrAnalysed">0</span></span>
+        <span class="text-txt-muted">·</span>
+        <span>Flagged: <span class="text-red font-bold" id="hdrFlagged">0</span></span>
+      </div>
+      <div class="flex items-center gap-2 px-3 py-1.5 bg-bg2 rounded-full border border-amber/10">
+        <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+        <span class="font-label text-[0.65rem] uppercase tracking-widest text-txt-dim">Engine Online</span>
+      </div>
+      <div id="clockDisplay" class="font-label text-xs text-txt-muted"></div>
+    </div>
+  </header>
+
+  <!-- Scrollable content area -->
+  <div class="flex-1 overflow-y-auto">
+
+    <!-- ══════════ PAGE: ANALYSIS ══════════ -->
+    <div class="page active p-8 lg:p-10" id="page-analysis">
+      <div class="grid grid-cols-12 gap-6 items-start max-w-7xl mx-auto">
+
+        <!-- LEFT: Input + Explanation -->
+        <section class="col-span-12 lg:col-span-7 space-y-6">
+
+          <!-- INPUT PANEL -->
+          <div class="bg-bg2 p-8 rounded-2xl border border-amber/5 shadow-2xl relative overflow-hidden group">
+            <div class="absolute top-0 right-0 w-40 h-40 bg-amber/5 blur-[80px] -mr-10 -mt-10 group-hover:bg-amber/10 transition-all duration-700 pointer-events-none"></div>
+            <div class="flex justify-between items-center mb-5">
+              <label class="font-label text-xs font-bold uppercase tracking-widest text-amber-lt">Transaction Intelligence</label>
+              <div class="flex gap-1">
+                <button onclick="loadSampleFraud()" class="px-3 py-1.5 text-[10px] font-label font-bold uppercase tracking-widest bg-red/10 text-red border border-red/20 rounded-lg hover:bg-red/20 transition-colors">
+                  Load Fraud Sample
+                </button>
+                <button onclick="loadSampleLegit()" class="px-3 py-1.5 text-[10px] font-label font-bold uppercase tracking-widest bg-green-500/10 text-green-400 border border-green-500/20 rounded-lg hover:bg-green-500/20 transition-colors">
+                  Load Safe Sample
+                </button>
+              </div>
+            </div>
+            <textarea id="txInput"
+              class="w-full h-52 bg-bg4/50 border-none rounded-xl p-5 text-txt placeholder:text-txt-muted font-body text-sm resize-none focus:ring-2 focus:ring-amber/20 transition-all outline-none"
+              placeholder="Describe the transaction in plain English — e.g. 'A ₹75,000 transfer at 2am from a new Android device with a Gmail address, user is renting, no home phone, foreign IP...'&#10;&#10;Or paste a JSON object with fields like housing_status, device_os, email_is_free, foreign_request, credit_risk_score, amount, hour..."></textarea>
+            <div class="mt-5 flex justify-between items-center">
+              <div class="flex items-center gap-4 text-xs text-txt-dim font-label">
+                <span class="flex items-center gap-1.5"><span class="material-symbols-outlined text-sm">model_training</span> XGBoost + Rule Engine</span>
+                <span class="flex items-center gap-1.5"><span class="material-symbols-outlined text-sm">schema</span> Hybrid Scoring</span>
+              </div>
+              <button id="analyseBtn" onclick="runAnalysis()"
+                class="amber-grad text-bg px-8 py-3 rounded-lg font-bold font-label text-xs uppercase tracking-widest flex items-center gap-2 shadow-lg shadow-amber/20 hover:brightness-110 active:scale-95 transition-all">
+                <span id="analyseBtnText">Run Analysis</span>
+                <span class="material-symbols-outlined fill-icon text-sm">bolt</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- EXPLANATION PANEL -->
+          <div class="bg-bg2 p-8 rounded-2xl border border-amber/5" id="explanationPanel">
+            <h3 class="font-label text-xs font-bold uppercase tracking-widest text-txt-dim mb-5">Forensic Explanation</h3>
+            <div id="explanationContent" class="space-y-4">
+              <p class="text-txt-dim text-sm leading-relaxed italic">Run an analysis to see the forensic explanation here.</p>
+            </div>
+          </div>
+
+          <!-- ACTIONS PANEL -->
+          <div id="actionsPanel" class="hidden">
+            <h3 class="font-label text-xs font-bold uppercase tracking-widest text-txt-dim mb-4">Recommended Actions</h3>
+            <div id="actionButtons" class="grid grid-cols-2 gap-3"></div>
+          </div>
+        </section>
+
+        <!-- RIGHT: Score + Signals -->
+        <section class="col-span-12 lg:col-span-5 space-y-6">
+
+          <!-- RISK SCORE CARD -->
+          <div class="glass p-8 rounded-2xl border border-amber/10 text-center relative overflow-hidden">
+            <div id="riskBgGlow" class="absolute inset-0 bg-gradient-to-br from-transparent to-transparent transition-all duration-700 pointer-events-none"></div>
+            <h3 class="font-label text-xs font-bold uppercase tracking-widest text-txt-dim mb-6 relative z-10">Hybrid Risk Score</h3>
+
+            <!-- SVG Gauge -->
+            <div class="relative w-44 h-44 mx-auto mb-5 z-10">
+              <svg class="w-full h-full -rotate-90" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="42" fill="none" stroke="#2a2a2a" stroke-width="8"/>
+                <circle id="gaugeCircle" cx="50" cy="50" r="42" fill="none"
+                  stroke="url(#riskGrad)" stroke-width="8"
+                  stroke-dasharray="264" stroke-dashoffset="264"
+                  stroke-linecap="round" class="gauge-circle"/>
+                <defs>
+                  <linearGradient id="riskGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#e07b2a"/>
+                    <stop offset="100%" stop-color="#ffb4ab"/>
+                  </linearGradient>
+                  <linearGradient id="safeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#22c55e"/>
+                    <stop offset="100%" stop-color="#4ade80"/>
+                  </linearGradient>
+                </defs>
+              </svg>
+              <div class="absolute inset-0 flex flex-col items-center justify-center">
+                <span id="scoreDisplay" class="text-5xl font-black tracking-tighter text-txt-dim">—</span>
+                <span id="scoreLevelDisplay" class="font-label text-[0.6rem] uppercase tracking-widest text-txt-dim mt-1">Awaiting Input</span>
+              </div>
+            </div>
+
+            <!-- Score legend -->
+            <div class="grid grid-cols-3 gap-1 px-2 py-2 bg-bg4/60 rounded-full text-[0.55rem] font-label uppercase tracking-widest relative z-10">
+              <div class="text-green-400">Safe 0–30</div>
+              <div class="text-amber-lt">Medium 31–59</div>
+              <div class="text-red font-bold" id="legendCritical">Critical 60+</div>
+            </div>
+
+            <!-- ML vs Hybrid breakdown -->
+            <div id="scoreBreakdown" class="hidden mt-5 grid grid-cols-2 gap-3 relative z-10">
+              <div class="bg-bg4/60 rounded-xl p-3">
+                <div class="font-label text-[0.6rem] uppercase tracking-widest text-txt-dim mb-1">ML Probability</div>
+                <div id="mlProbDisplay" class="text-2xl font-black font-label text-amber-lt">—</div>
+              </div>
+              <div class="bg-bg4/60 rounded-xl p-3">
+                <div class="font-label text-[0.6rem] uppercase tracking-widest text-txt-dim mb-1">Hybrid Score</div>
+                <div id="hybridDisplay" class="text-2xl font-black font-label text-amber-lt">—</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SIGNALS LIST -->
+          <div class="bg-bg2 p-6 rounded-2xl border border-amber/5">
+            <h3 class="font-label text-xs font-bold uppercase tracking-widest text-txt-dim mb-5">Risk Signals Detected</h3>
+            <div id="signalsList" class="space-y-3">
+              <div class="flex items-center gap-3 p-4 bg-bg4/40 rounded-xl text-txt-dim text-sm italic">
+                <span class="material-symbols-outlined text-txt-muted">radar</span>
+                No signals yet — run an analysis
+              </div>
+            </div>
+          </div>
+
+          <!-- VERDICT CARD (shown after analysis) -->
+          <div id="verdictCard" class="hidden p-5 rounded-2xl border flex items-center gap-4">
+            <span id="verdictIcon" class="material-symbols-outlined fill-icon text-4xl"></span>
             <div>
-                <div class="chat-title" id="chatTitle">Analysis Terminal</div>
-                <div class="chat-subtitle" id="chatSub">Describe a transaction to get started</div>
+              <div id="verdictLabel" class="text-xl font-black font-headline"></div>
+              <div id="verdictSub" class="text-xs text-txt-dim mt-0.5 font-label uppercase tracking-widest"></div>
             </div>
-            <div class="hdr-actions">
-                <button class="hdr-btn" onclick="clearChat()">Clear</button>
-                <button class="hdr-btn" onclick="exportChat()">Export</button>
+          </div>
+
+          <!-- LOADING STATE -->
+          <div id="analysisLoading" class="hidden p-5 bg-bg2 rounded-2xl border border-amber/5 flex items-center gap-4">
+            <div class="spinner flex-shrink-0"></div>
+            <div>
+              <div class="text-sm font-bold text-txt-dim">Running forensic analysis...</div>
+              <div class="text-xs text-txt-muted font-label uppercase tracking-widest mt-0.5">Querying ML + Rule engine</div>
             </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- ══════════ PAGE: HISTORY ══════════ -->
+    <div class="page p-8 lg:p-10" id="page-history">
+      <div class="max-w-6xl mx-auto">
+        <div class="mb-8">
+          <p class="text-txt-dim text-sm font-label">All transactions analysed this session.</p>
         </div>
 
-        <div class="messages" id="messages">
-            <div class="welcome" id="welcome">
-                <div class="welcome-tag">⚡ XGBoost · 1M Transactions · NeurIPS 2022</div>
-                <div class="welcome-title">Fraud detection that<br>speaks <span>plain English</span></div>
-                <div class="welcome-desc">Describe any transaction naturally. FraudGuard extracts signals, runs the model, and tells you exactly what it found — with explanation and recommended action.</div>
-                <div class="welcome-cards">
-                    <div class="welcome-card"><div class="wc-icon">🔍</div><div class="wc-title">Transaction Analysis</div><div class="wc-desc">Score any transaction with fraud probability and risk flags</div></div>
-                    <div class="welcome-card"><div class="wc-icon">📊</div><div class="wc-title">Risk Reports</div><div class="wc-desc">Structured reports with model confidence and recommended action</div></div>
-                    <div class="welcome-card"><div class="wc-icon">📸</div><div class="wc-title">Screenshot Upload</div><div class="wc-desc">Upload payment screenshots for instant AI analysis</div></div>
-                    <div class="welcome-card"><div class="wc-icon">🛡️</div><div class="wc-title">Prevention Advice</div><div class="wc-desc">Specific steps to protect against detected fraud types</div></div>
+        <!-- Filter bar -->
+        <div class="mb-6 p-1 bg-bg2 rounded-xl border border-amber/5 flex items-center gap-3">
+          <div class="relative flex-1">
+            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-txt-muted text-lg">search</span>
+            <input id="histSearch" onkeyup="filterHistory()" type="text" placeholder="Search transactions..."
+              class="w-full bg-transparent border-none focus:ring-0 pl-11 pr-4 py-3 text-sm text-txt placeholder:text-txt-muted outline-none"/>
+          </div>
+          <button onclick="exportHistory()" class="flex items-center gap-2 px-4 py-2 bg-bg4 hover:bg-bg5 text-txt-dim hover:text-txt rounded-lg text-xs font-label font-bold uppercase tracking-widest transition-colors">
+            <span class="material-symbols-outlined text-sm">download</span> Export
+          </button>
+          <button onclick="clearHistory()" class="flex items-center gap-2 px-4 py-2 bg-red/10 hover:bg-red/20 text-red rounded-lg text-xs font-label font-bold uppercase tracking-widest transition-colors border border-red/20">
+            <span class="material-symbols-outlined text-sm">delete</span> Clear
+          </button>
+        </div>
+
+        <!-- Table -->
+        <div class="bg-bg2 rounded-2xl overflow-hidden border border-amber/5 shadow-2xl">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-bg4/50 border-b border-amber/5">
+                <th class="px-6 py-4 font-label text-[0.65rem] uppercase tracking-widest text-txt-dim">Time</th>
+                <th class="px-6 py-4 font-label text-[0.65rem] uppercase tracking-widest text-txt-dim">Description</th>
+                <th class="px-6 py-4 font-label text-[0.65rem] uppercase tracking-widest text-txt-dim">ML Prob</th>
+                <th class="px-6 py-4 font-label text-[0.65rem] uppercase tracking-widest text-txt-dim">Hybrid Score</th>
+                <th class="px-6 py-4 font-label text-[0.65rem] uppercase tracking-widest text-txt-dim">Verdict</th>
+                <th class="px-6 py-4 font-label text-[0.65rem] uppercase tracking-widest text-txt-dim">Action</th>
+              </tr>
+            </thead>
+            <tbody id="historyTableBody" class="divide-y divide-amber/5">
+              <tr>
+                <td colspan="6" class="px-6 py-12 text-center text-txt-muted text-sm font-label italic">
+                  No transactions analysed yet. Run an analysis first.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="p-4 bg-bg4/20 border-t border-amber/5 flex justify-between items-center">
+            <p class="font-label text-[0.65rem] uppercase tracking-widest text-txt-muted" id="historyCount">0 records</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ PAGE: BATCH ══════════ -->
+    <div class="page p-8 lg:p-10" id="page-batch">
+      <div class="max-w-7xl mx-auto">
+        <!-- Summary cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
+          <div class="bg-bg2 p-6 rounded-2xl border-l-4 border-amber-lt">
+            <p class="font-label text-xs font-bold uppercase tracking-widest text-txt-dim mb-2">Total Processed</p>
+            <div class="flex items-baseline gap-3">
+              <span class="text-4xl font-black text-txt" id="batchTotal">0</span>
+              <span class="text-xs text-txt-dim font-label">this session</span>
+            </div>
+          </div>
+          <div class="bg-bg2 p-6 rounded-2xl border-l-4 border-red">
+            <p class="font-label text-xs font-bold uppercase tracking-widest text-txt-dim mb-2">High Risk Found</p>
+            <div class="flex items-baseline gap-3">
+              <span class="text-4xl font-black text-txt" id="batchFlagged">0</span>
+              <span class="text-xs text-red font-bold font-label" id="batchFlaggedPct"></span>
+            </div>
+          </div>
+          <div class="bg-bg2 p-6 rounded-2xl border-l-4 border-amber">
+            <p class="font-label text-xs font-bold uppercase tracking-widest text-txt-dim mb-2">Safe Transactions</p>
+            <div class="flex items-baseline gap-3">
+              <span class="text-4xl font-black text-txt" id="batchCleared">0</span>
+              <span class="text-xs text-txt-dim font-label">cleared</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <!-- Left: Processing area -->
+          <div class="lg:col-span-8 space-y-6">
+
+            <!-- Active batch progress -->
+            <div id="batchProgressCard" class="hidden glass p-8 rounded-3xl border border-amber/5 relative overflow-hidden">
+              <div class="absolute top-0 right-0 p-5">
+                <span class="text-[10px] font-label font-bold text-amber-lt px-2 py-1 bg-amber/10 rounded uppercase">Processing</span>
+              </div>
+              <div class="flex items-center gap-4 mb-6">
+                <div class="w-12 h-12 rounded-xl bg-bg5 flex items-center justify-center text-amber-lt">
+                  <span class="material-symbols-outlined fill-icon text-2xl">dataset</span>
                 </div>
-            </div>
-        </div>
-
-        <div class="input-section">
-            <div class="img-bar" id="imgBar">
-                <img id="previewImg" src="" alt="">
-                <span>Image attached — ready for analysis</span>
-                <button class="img-remove" onclick="removeImage()">Remove</button>
-            </div>
-            <div class="input-box">
-                <div class="input-row">
-                    <textarea id="msgInput" placeholder="Describe a transaction or ask about fraud..." rows="1"
-                        onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
-                    <div class="input-btns">
-                        <button class="attach-btn" onclick="document.getElementById('imgInput').click()" title="Upload screenshot">📎</button>
-                        <input type="file" id="imgInput" accept="image/*" style="display:none" onchange="handleImage(event)">
-                        <button class="send-btn" id="sendBtn" onclick="send()">Send →</button>
-                    </div>
-                </div>
-            </div>
-            <div class="input-footer">
-                <div class="input-hint">Enter to send · Shift+Enter for new line</div>
-                <div class="mode-badge" id="modeBadge">Analyse</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- HISTORY OVERLAY -->
-    <div class="overlay" id="histPanel">
-        <div class="overlay-hdr">
-            <div><div class="overlay-title">Session History</div><div class="overlay-sub">All conversations this session</div></div>
-            <button class="overlay-close" onclick="switchView('analysis')">Close</button>
-        </div>
-        <div class="overlay-body" id="histBody"><div class="overlay-empty">No history yet.<br>Start a conversation to see it here.</div></div>
-    </div>
-
-    <!-- REPORTS OVERLAY -->
-    <div class="overlay" id="rptPanel">
-        <div class="overlay-hdr">
-            <div><div class="overlay-title">Risk Report</div><div class="overlay-sub">Last analysed transaction</div></div>
-            <button class="overlay-close" onclick="switchView('analysis')">Close</button>
-        </div>
-        <div class="overlay-body" id="rptBody"><div class="overlay-empty">No transaction analysed yet.<br>Run an analysis first.</div></div>
-    </div>
-
-    <!-- BATCH PANEL -->
-    <div class="batch-panel" id="batchPanel">
-        <div class="batch-hdr">
-            <div class="batch-hdr-left">
                 <div>
-                    <div class="batch-title">Batch Analysis</div>
-                    <div class="batch-sub">Add transactions manually or upload a CSV — score up to 500 at once</div>
+                  <h4 class="text-lg font-bold" id="batchFileName">Batch Job</h4>
+                  <p class="text-sm text-txt-dim" id="batchFileInfo">Preparing...</p>
                 </div>
+              </div>
+              <div class="space-y-3">
+                <div class="flex justify-between text-xs font-label font-bold uppercase tracking-widest">
+                  <span class="text-txt-dim">Progress</span>
+                  <span class="text-amber-lt" id="batchPct">0%</span>
+                </div>
+                <div class="h-2 w-full bg-bg5 rounded-full overflow-hidden">
+                  <div id="batchProgressBar" class="h-full amber-grad rounded-full transition-all duration-500" style="width:0%"></div>
+                </div>
+                <div class="flex justify-between text-xs text-txt-dim font-label font-bold uppercase">
+                  <span id="batchScanned">0 Scanned</span>
+                  <span id="batchFlaggedLive" class="text-red">0 Flagged</span>
+                </div>
+              </div>
             </div>
-            <button class="batch-close" onclick="switchView('analysis')">← Back to Chat</button>
+
+            <!-- Results table -->
+            <div>
+              <div class="flex items-center justify-between mb-5">
+                <h4 class="text-xl font-bold">Batch Results</h4>
+                <div class="flex gap-2">
+                  <button onclick="batchExportCSV()" class="p-2 bg-bg2 rounded-lg hover:bg-bg4 text-txt-dim hover:text-txt transition-colors border border-amber/5">
+                    <span class="material-symbols-outlined text-sm">download</span>
+                  </button>
+                </div>
+              </div>
+              <div class="bg-bg2 rounded-2xl overflow-hidden border border-amber/5">
+                <div class="overflow-x-auto">
+                  <table class="w-full text-left border-collapse min-w-[700px]">
+                    <thead>
+                      <tr class="border-b border-amber/5">
+                        <th class="p-4 font-label text-[0.65rem] font-bold tracking-widest text-txt-dim uppercase">ID</th>
+                        <th class="p-4 font-label text-[0.65rem] font-bold tracking-widest text-txt-dim uppercase">Verdict</th>
+                        <th class="p-4 font-label text-[0.65rem] font-bold tracking-widest text-txt-dim uppercase">ML %</th>
+                        <th class="p-4 font-label text-[0.65rem] font-bold tracking-widest text-txt-dim uppercase">Hybrid</th>
+                        <th class="p-4 font-label text-[0.65rem] font-bold tracking-widest text-txt-dim uppercase">Risk Level</th>
+                        <th class="p-4 font-label text-[0.65rem] font-bold tracking-widest text-txt-dim uppercase">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="batchResultsBody" class="divide-y divide-amber/5">
+                      <tr><td colspan="6" class="p-8 text-center text-txt-muted text-sm italic font-label">No batch results yet. Upload a CSV or add transactions manually.</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Upload + Config -->
+          <div class="lg:col-span-4 space-y-5">
+            <!-- File Upload -->
+            <div id="batchDropZone"
+              class="bg-bg3 p-1 rounded-3xl border-2 border-dashed border-amber/20 group hover:border-amber/50 transition-colors cursor-pointer"
+              onclick="document.getElementById('batchFileInput').click()"
+              ondragover="event.preventDefault();this.classList.add('border-amber/60')"
+              ondragleave="this.classList.remove('border-amber/60')"
+              ondrop="handleBatchDrop(event)">
+              <div class="bg-bg2 rounded-[1.4rem] p-8 flex flex-col items-center text-center group-hover:bg-bg4 transition-colors">
+                <div class="w-16 h-16 rounded-full bg-bg5 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                  <span class="material-symbols-outlined fill-icon text-3xl text-amber-lt">cloud_upload</span>
+                </div>
+                <h5 class="text-base font-bold mb-2">Upload CSV Batch</h5>
+                <p class="text-xs text-txt-dim mb-5 max-w-[180px] leading-relaxed">Drag & drop a CSV file or click to browse</p>
+                <button onclick="event.stopPropagation();document.getElementById('batchFileInput').click()"
+                  class="w-full py-3 rounded-xl amber-grad text-bg font-bold text-xs font-label uppercase tracking-widest shadow-lg shadow-amber/20 hover:brightness-110">
+                  Select CSV File
+                </button>
+                <p class="mt-3 text-[10px] font-label uppercase tracking-widest text-txt-muted">Max 500 rows</p>
+              </div>
+            </div>
+            <input type="file" id="batchFileInput" accept=".csv" class="hidden" onchange="handleBatchFile(event)"/>
+
+            <!-- Manual Add Form -->
+            <div class="bg-bg2 p-5 rounded-2xl border border-amber/5 space-y-4">
+              <h5 class="font-label text-xs font-bold uppercase tracking-widest text-txt-dim">Add Transaction Manually</h5>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="font-label text-[10px] uppercase tracking-wider text-txt-muted block mb-1">Amount (₹)</label>
+                  <input id="mAmount" type="number" placeholder="5000" class="w-full bg-bg4 border border-amber/10 rounded-lg px-3 py-2 text-xs text-txt focus:ring-1 focus:ring-amber/30 outline-none"/>
+                </div>
+                <div>
+                  <label class="font-label text-[10px] uppercase tracking-wider text-txt-muted block mb-1">Hour (0-23)</label>
+                  <input id="mHour" type="number" placeholder="14" min="0" max="23" class="w-full bg-bg4 border border-amber/10 rounded-lg px-3 py-2 text-xs text-txt focus:ring-1 focus:ring-amber/30 outline-none"/>
+                </div>
+                <div>
+                  <label class="font-label text-[10px] uppercase tracking-wider text-txt-muted block mb-1">Foreign Request</label>
+                  <select id="mForeign" class="w-full bg-bg4 border border-amber/10 rounded-lg px-3 py-2 text-xs text-txt focus:ring-1 focus:ring-amber/30 outline-none">
+                    <option value="0">No (Local)</option>
+                    <option value="1">Yes (Foreign)</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="font-label text-[10px] uppercase tracking-wider text-txt-muted block mb-1">Email Type</label>
+                  <select id="mEmail" class="w-full bg-bg4 border border-amber/10 rounded-lg px-3 py-2 text-xs text-txt focus:ring-1 focus:ring-amber/30 outline-none">
+                    <option value="0">Work / Corporate</option>
+                    <option value="1">Free (Gmail/Yahoo)</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="font-label text-[10px] uppercase tracking-wider text-txt-muted block mb-1">Device OS</label>
+                  <select id="mDevice" class="w-full bg-bg4 border border-amber/10 rounded-lg px-3 py-2 text-xs text-txt focus:ring-1 focus:ring-amber/30 outline-none">
+                    <option value="1">Mac</option>
+                    <option value="0">Windows</option>
+                    <option value="3">Android</option>
+                    <option value="4">iOS</option>
+                    <option value="2">Linux</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="font-label text-[10px] uppercase tracking-wider text-txt-muted block mb-1">Credit Score</label>
+                  <input id="mCredit" type="number" placeholder="150" class="w-full bg-bg4 border border-amber/10 rounded-lg px-3 py-2 text-xs text-txt focus:ring-1 focus:ring-amber/30 outline-none"/>
+                </div>
+              </div>
+              <button onclick="addManualToBatch()" class="w-full py-2.5 rounded-lg border border-amber/30 text-amber-lt text-xs font-label font-bold uppercase tracking-widest hover:bg-amber/10 transition-colors flex items-center justify-center gap-2">
+                <span class="material-symbols-outlined text-sm">add</span> Add to Queue
+              </button>
+              <div id="manualQueueInfo" class="text-[10px] font-label uppercase tracking-widest text-txt-muted text-center">Queue: 0 transactions</div>
+            </div>
+
+            <!-- Run batch -->
+            <button id="runBatchBtn" onclick="runBatch()" disabled
+              class="w-full py-4 rounded-xl amber-grad text-bg font-bold font-label text-sm uppercase tracking-widest flex items-center justify-center gap-2 shadow-xl shadow-amber/20 hover:brightness-110 active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none">
+              <span class="material-symbols-outlined fill-icon">rocket_launch</span>
+              <span id="runBatchBtnText">Run Batch Analysis</span>
+            </button>
+
+            <!-- CSV format hint -->
+            <div class="bg-bg2 p-4 rounded-xl border border-amber/5">
+              <p class="font-label text-[10px] uppercase tracking-widest text-txt-muted mb-2">CSV Format</p>
+              <code class="text-[10px] text-amber-lt/80 font-mono leading-relaxed block">id,amount,hour,foreign_request,<br/>email_is_free,device_os,<br/>credit_risk_score,housing_status</code>
+            </div>
+          </div>
         </div>
-        <div class="batch-body">
-            <!-- TABS -->
-            <div class="b-tabs">
-                <button class="b-tab active" onclick="switchBatchTab('form')">📝 Add Manually</button>
-                <button class="b-tab" onclick="switchBatchTab('csv')">📂 Upload CSV</button>
-            </div>
-
-            <!-- FORM TAB -->
-            <div class="b-tab-content active" id="bTabForm">
-                <div class="b-form-card">
-                    <div class="b-form-hdr">
-                        <div class="b-form-title">Transaction Details</div>
-                        <div class="b-form-sub">Fill what you know — unknown fields use safe defaults</div>
-                    </div>
-                    <div class="b-form-grid">
-                        <div class="b-fg"><label class="b-lbl">Transaction ID</label><input class="b-input" id="bId" placeholder="txn_001"><span class="b-hint">Optional identifier</span></div>
-                        <div class="b-fg"><label class="b-lbl">Amount (₹)</label><input class="b-input" id="bAmount" type="number" placeholder="5000"><span class="b-hint">Transaction value</span></div>
-                        <div class="b-fg"><label class="b-lbl">Avg Amount (₹)</label><input class="b-input" id="bAvg" type="number" placeholder="3000"><span class="b-hint">User's typical amount</span></div>
-                        <div class="b-fg"><label class="b-lbl">Hour of Day</label><input class="b-input" id="bHour" type="number" min="0" max="23" placeholder="14"><span class="b-hint">0–23 (2 = 2am)</span></div>
-                        <div class="b-fg"><label class="b-lbl">Housing Status</label><select class="b-select" id="bHousing"><option value="">Unknown</option><option value="0">Renting / Unstable</option><option value="2">Average</option><option value="3">Owns Home</option></select></div>
-                        <div class="b-fg"><label class="b-lbl">Device OS</label><select class="b-select" id="bDevice"><option value="">Unknown</option><option value="0">Windows</option><option value="1">Mac</option><option value="2">Linux</option><option value="3">Android</option><option value="4">iOS</option></select></div>
-                        <div class="b-fg"><label class="b-lbl">Email Type</label><select class="b-select" id="bEmail"><option value="">Unknown</option><option value="1">Free (Gmail/Yahoo)</option><option value="0">Work / Corporate</option></select></div>
-                        <div class="b-fg"><label class="b-lbl">Foreign Request</label><select class="b-select" id="bForeign"><option value="0">No (Local)</option><option value="1">Yes (Foreign)</option></select></div>
-                        <div class="b-fg"><label class="b-lbl">Credit Risk Score</label><input class="b-input" id="bCredit" type="number" placeholder="150"><span class="b-hint">0–300, higher = safer</span></div>
-                        <div class="b-fg"><label class="b-lbl">Has Other Cards</label><select class="b-select" id="bCards"><option value="">Unknown</option><option value="0">No</option><option value="1">Yes</option></select></div>
-                        <div class="b-fg"><label class="b-lbl">Device Changed</label><select class="b-select" id="bDevChg"><option value="false">No</option><option value="true">Yes (Suspicious)</option></select></div>
-                        <div class="b-fg"><label class="b-lbl">Location Changed</label><select class="b-select" id="bLocChg"><option value="false">No</option><option value="true">Yes (Suspicious)</option></select></div>
-                    </div>
-                    <div class="b-form-footer">
-                        <button class="b-add-btn" onclick="bAddToQueue()">+ Add to Queue</button>
-                        <button class="b-ghost-btn" onclick="bClearForm()">Clear Form</button>
-                        <div class="b-queue-count">Queue: <span id="bQueueCount">0</span> transactions</div>
-                    </div>
-                </div>
-
-                <div class="b-queue" id="bQueueCard">
-                    <div class="b-queue-hdr">
-                        <div class="b-queue-lbl">Transaction Queue</div>
-                        <button class="b-ghost-btn" onclick="bClearQueue()" style="font-size:11px;padding:4px 10px">Clear All</button>
-                    </div>
-                    <div id="bQueueBody"><div class="b-empty">No transactions added yet.</div></div>
-                </div>
-            </div>
-
-            <!-- CSV TAB -->
-            <div class="b-tab-content" id="bTabCsv">
-                <div class="b-form-card">
-                    <div style="padding:16px">
-                        <div class="b-drop" id="bDrop" onclick="document.getElementById('bCsvInput').click()"
-                            ondragover="bDragOver(event)" ondragleave="bDragLeave()" ondrop="bDropFile(event)">
-                            <div class="b-drop-icon">📂</div>
-                            <div class="b-drop-title">Drop your CSV here</div>
-                            <div class="b-drop-sub">or click to browse files</div>
-                            <button class="b-browse" onclick="event.stopPropagation();document.getElementById('bCsvInput').click()">Browse CSV</button>
-                            <input type="file" id="bCsvInput" accept=".csv" style="display:none" onchange="bLoadCSV(event)">
-                        </div>
-                        <div id="bCsvLoaded" style="display:none"></div>
-                        <div class="b-fmt">
-                            <div class="b-fmt-lbl">Expected CSV Format</div>
-                            <pre>id,amount,avg_amount,hour,housing_status,device_os,email_is_free,foreign_request,credit_risk_score,device_changed,location_changed
-txn_001,75000,5000,2,0,3,1,1,60,true,false
-txn_002,1200,1000,14,3,1,0,0,220,false,false</pre>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- RUN -->
-            <div class="b-run-bar">
-                <button class="b-run-btn" id="bRunBtn" onclick="bRunBatch()" disabled>⚡ Run Batch Analysis</button>
-                <div class="b-ready">Ready to score <span id="bReadyCount">0</span> transactions</div>
-            </div>
-            <div class="b-prog" id="bProg"><div class="b-prog-fill" id="bProgFill"></div></div>
-
-            <!-- SUMMARY + RESULTS -->
-            <div class="b-summary" id="bSummary">
-                <div class="b-sum-title">Summary</div>
-                <div class="b-sum-cards">
-                    <div class="b-sc"><div class="b-sc-lbl">Total</div><div class="b-sc-val amber" id="bsTotal">0</div><div class="b-sc-sub">processed</div></div>
-                    <div class="b-sc"><div class="b-sc-lbl">Critical</div><div class="b-sc-val red" id="bsCritical">0</div><div class="b-sc-sub">recommend block</div></div>
-                    <div class="b-sc"><div class="b-sc-lbl">High</div><div class="b-sc-val yellow" id="bsHigh">0</div><div class="b-sc-sub">recommend review</div></div>
-                    <div class="b-sc"><div class="b-sc-lbl">Medium</div><div class="b-sc-val blue" id="bsMedium">0</div><div class="b-sc-sub">monitor</div></div>
-                    <div class="b-sc"><div class="b-sc-lbl">Low / Clear</div><div class="b-sc-val green" id="bsLow">0</div><div class="b-sc-sub">legitimate</div></div>
-                </div>
-                <div class="b-res-card">
-                    <div class="b-res-hdr">
-                        <div class="b-res-title">Transaction Results</div>
-                        <div class="b-res-actions">
-                            <button class="b-exp-btn" onclick="bExportCSV()">⬇ CSV</button>
-                            <button class="b-exp-btn" onclick="bExportJSON()">⬇ JSON</button>
-                        </div>
-                    </div>
-                    <div class="b-res-wrap">
-                        <table class="b-res-table">
-                            <thead><tr><th>ID</th><th>Verdict</th><th>ML %</th><th>Hybrid</th><th>Risk</th><th>Actions</th><th>Explanation</th></tr></thead>
-                            <tbody id="bResBody"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
+      </div>
     </div>
-</div>
+
+    <!-- ══════════ PAGE: REPORTS ══════════ -->
+    <div class="page p-8 lg:p-10" id="page-reports">
+      <div class="max-w-6xl mx-auto">
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-5 mb-10">
+          <p class="text-txt-dim text-sm">Session performance metrics and fraud signal breakdown.</p>
+          <button onclick="exportReportJSON()" class="flex items-center gap-2 px-5 py-2.5 rounded-lg amber-grad text-bg font-bold font-label text-xs uppercase tracking-widest shadow-lg shadow-amber/20 active:scale-95 transition-all">
+            <span class="material-symbols-outlined fill-icon text-sm">download</span> Export JSON Report
+          </button>
+        </div>
+
+        <!-- Metric cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-10">
+          <div class="bg-bg2 p-6 rounded-xl border-l-4 border-amber-lt">
+            <div class="font-label text-[0.6rem] uppercase tracking-widest text-txt-dim mb-3">Total Analysed</div>
+            <div class="text-3xl font-black text-txt" id="rptTotal">0</div>
+            <div class="h-1 w-full bg-bg5 rounded-full mt-4"><div id="rptTotalBar" class="h-full bg-amber-lt rounded-full" style="width:0%"></div></div>
+            <p class="text-[10px] text-txt-muted mt-2 font-label uppercase tracking-tighter">This session</p>
+          </div>
+          <div class="bg-bg2 p-6 rounded-xl border-l-4 border-red">
+            <div class="font-label text-[0.6rem] uppercase tracking-widest text-txt-dim mb-3">Flagged as Fraud</div>
+            <div class="text-3xl font-black text-txt" id="rptFlagged">0</div>
+            <div class="h-1 w-full bg-bg5 rounded-full mt-4"><div id="rptFlaggedBar" class="h-full bg-red rounded-full" style="width:0%"></div></div>
+            <p class="text-[10px] text-txt-muted mt-2 font-label uppercase tracking-tighter" id="rptFlaggedPct">0% of total</p>
+          </div>
+          <div class="bg-bg2 p-6 rounded-xl border-l-4 border-amber">
+            <div class="font-label text-[0.6rem] uppercase tracking-widest text-txt-dim mb-3">Avg Hybrid Score</div>
+            <div class="text-3xl font-black text-txt" id="rptAvgScore">—</div>
+            <div class="h-1 w-full bg-bg5 rounded-full mt-4"><div id="rptAvgBar" class="h-full bg-amber rounded-full" style="width:0%"></div></div>
+            <p class="text-[10px] text-txt-muted mt-2 font-label uppercase tracking-tighter">Risk threshold: 60</p>
+          </div>
+          <div class="bg-bg2 p-6 rounded-xl border-l-4 border-green-500">
+            <div class="font-label text-[0.6rem] uppercase tracking-widest text-txt-dim mb-3">Cleared Safe</div>
+            <div class="text-3xl font-black text-txt" id="rptCleared">0</div>
+            <div class="h-1 w-full bg-bg5 rounded-full mt-4"><div id="rptClearedBar" class="h-full bg-green-500 rounded-full" style="width:0%"></div></div>
+            <p class="text-[10px] text-txt-muted mt-2 font-label uppercase tracking-tighter">Legitimate transactions</p>
+          </div>
+        </div>
+
+        <!-- Risk distribution + recent signals -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Risk level breakdown -->
+          <div class="bg-bg2 p-8 rounded-2xl border border-amber/5">
+            <h3 class="font-bold text-lg mb-6">Risk Level Distribution</h3>
+            <div class="space-y-5" id="rptRiskBars">
+              <div class="flex items-center gap-4">
+                <div class="w-16 text-[10px] font-label font-bold uppercase tracking-widest text-red">Critical</div>
+                <div class="flex-1 h-2 bg-bg5 rounded-full overflow-hidden"><div id="barCritical" class="h-full bg-red rounded-full transition-all duration-700" style="width:0%"></div></div>
+                <div class="w-8 text-right text-xs font-bold font-label text-red" id="cntCritical">0</div>
+              </div>
+              <div class="flex items-center gap-4">
+                <div class="w-16 text-[10px] font-label font-bold uppercase tracking-widest text-amber-lt">High</div>
+                <div class="flex-1 h-2 bg-bg5 rounded-full overflow-hidden"><div id="barHigh" class="h-full bg-amber-lt rounded-full transition-all duration-700" style="width:0%"></div></div>
+                <div class="w-8 text-right text-xs font-bold font-label text-amber-lt" id="cntHigh">0</div>
+              </div>
+              <div class="flex items-center gap-4">
+                <div class="w-16 text-[10px] font-label font-bold uppercase tracking-widest text-blue-400">Medium</div>
+                <div class="flex-1 h-2 bg-bg5 rounded-full overflow-hidden"><div id="barMedium" class="h-full bg-blue-400 rounded-full transition-all duration-700" style="width:0%"></div></div>
+                <div class="w-8 text-right text-xs font-bold font-label text-blue-400" id="cntMedium">0</div>
+              </div>
+              <div class="flex items-center gap-4">
+                <div class="w-16 text-[10px] font-label font-bold uppercase tracking-widest text-green-400">Low</div>
+                <div class="flex-1 h-2 bg-bg5 rounded-full overflow-hidden"><div id="barLow" class="h-full bg-green-400 rounded-full transition-all duration-700" style="width:0%"></div></div>
+                <div class="w-8 text-right text-xs font-bold font-label text-green-400" id="cntLow">0</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Top signals seen -->
+          <div class="bg-bg2 p-8 rounded-2xl border border-amber/5">
+            <h3 class="font-bold text-lg mb-6">Top Risk Signals Seen</h3>
+            <div id="topSignalsList" class="space-y-3">
+              <p class="text-txt-muted text-sm italic font-label">No signals recorded yet.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end scrollable -->
+</main>
+
+<!-- ═══════════════════════════════════════════
+     FAB
+════════════════════════════════════════════ -->
+<button onclick="showPage('analysis'); document.getElementById('txInput').focus();"
+  class="fixed bottom-8 right-8 w-14 h-14 rounded-full amber-grad text-bg flex items-center justify-center shadow-[0_16px_32px_-8px_rgba(224,123,42,0.5)] hover:scale-110 active:scale-90 transition-all z-50">
+  <span class="material-symbols-outlined fill-icon text-2xl">bolt</span>
+</button>
 
 <script>
-    let img = null, mode = 'transaction';
-    let history = [], lastFD = null, lastMsg = null;
-    let sA = 0, sF = 0, sC = 0, scores = [];
+// ─── STATE ───────────────────────────────────────────────────────────────────
+let sessionHistory = [];
+let batchQueue     = [];
+let lastResult     = null;
+let batchResults   = [];
+let stats = { analysed:0, flagged:0, cleared:0, scores:[], critical:0, high:0, medium:0, low:0 };
+let allSignals = {};
 
-    const modes = {
-        transaction: { label:'Analyse', ph:'Describe a transaction to analyse...', sub:'Describe a transaction to get started', start:'Analyse this transaction: ' },
-        education:   { label:'Learn',   ph:'Ask anything about fraud...', sub:'Ask about fraud patterns, scams, or security', start:'Explain to me: ' },
-        prevention:  { label:'Prevent', ph:'Describe a situation for prevention advice...', sub:'Get specific prevention advice', start:'How can I protect myself from: ' },
-        report:      { label:'Report',  ph:'Describe a transaction for a risk report...', sub:'Generate a structured risk report', start:'Generate a risk report for: ' }
+// ─── NAVIGATION ──────────────────────────────────────────────────────────────
+const pageTitles = {
+  analysis: ['Fraud Analysis', 'Real-time forensic inspection engine'],
+  history:  ['Session History', 'All transactions analysed this session'],
+  batch:    ['Batch Analysis', 'High-volume forensic scan engine'],
+  reports:  ['Risk Reports', 'Session performance & signal breakdown']
+};
+
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.querySelectorAll('[id^="nav-"]').forEach(n => {
+    n.className = 'nav-link w-full flex items-center gap-3 px-4 py-3 rounded-lg font-label text-xs font-bold uppercase tracking-widest transition-all text-left text-txt opacity-60 hover:opacity-100 hover:bg-bg2';
+  });
+  const activeNav = document.getElementById('nav-' + name);
+  activeNav.className = 'nav-link w-full flex items-center gap-3 px-4 py-3 rounded-lg font-label text-xs font-bold uppercase tracking-widest transition-all text-left bg-amber text-bg';
+  document.getElementById('pageTitle').textContent = pageTitles[name][0];
+  document.getElementById('pageSubtitle').textContent = pageTitles[name][1];
+  if (name === 'history') renderHistory();
+  if (name === 'reports') renderReports();
+}
+
+// ─── CLOCK ───────────────────────────────────────────────────────────────────
+function updateClock() {
+  document.getElementById('clockDisplay').textContent = new Date().toTimeString().split(' ')[0];
+}
+setInterval(updateClock, 1000); updateClock();
+
+// ─── SAMPLES ─────────────────────────────────────────────────────────────────
+function loadSampleFraud() {
+  document.getElementById('txInput').value =
+`A suspicious account application was submitted at 2:14 AM from an Android device (device_os: 3) using a Gmail address (email_is_free: 1). The applicant is renting (housing_status: 0), has no other bank cards (has_other_cards: 0), no valid home phone (phone_home_valid: 0), and the request originated from a foreign IP (foreign_request: 1). Credit risk score is 62 (very low). The session lasted less than 1 minute (keep_alive_session: 0). Proposed credit limit is ₹2,500. Income reported as 0.15.`;
+}
+function loadSampleLegit() {
+  document.getElementById('txInput').value =
+`Standard recurring subscription payment from a MacBook Pro (device_os: 1) using a corporate email (email_is_free: 0). The customer owns their home (housing_status: 3), has multiple bank cards (has_other_cards: 1), valid home phone on file (phone_home_valid: 1). Local request (foreign_request: 0), credit score 240, employed full time (employment_status: 1). Session was 12 minutes long. Income 0.8.`;
+}
+
+// ─── ANALYSIS ────────────────────────────────────────────────────────────────
+async function runAnalysis() {
+  const input = document.getElementById('txInput').value.trim();
+  if (!input) return;
+
+  setLoading(true);
+
+  // Try to parse as JSON, otherwise send as text for LLM to extract
+  let payload = {};
+  try {
+    payload = JSON.parse(input);
+  } catch(e) {
+    // Send as raw text description — backend LLM will handle it
+    // Fall back to calling /chat endpoint if text, or /analyze with empty payload
+    payload = { description: input };
+  }
+
+  try {
+    const res = await fetch('/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error('Server error ' + res.status);
+    const data = await res.json();
+    lastResult = data;
+    renderAnalysisResult(data, input);
+    recordSession(input, data);
+    updateHeaderStats();
+  } catch(err) {
+    showError('Analysis failed: ' + err.message);
+  } finally {
+    setLoading(false);
+  }
+}
+
+function setLoading(on) {
+  document.getElementById('analysisLoading').classList.toggle('hidden', !on);
+  document.getElementById('verdictCard').classList.add('hidden');
+  const btn = document.getElementById('analyseBtn');
+  btn.disabled = on;
+  document.getElementById('analyseBtnText').textContent = on ? 'Analysing...' : 'Run Analysis';
+  if (on) {
+    document.getElementById('scoreDisplay').textContent = '—';
+    document.getElementById('scoreLevelDisplay').textContent = 'Processing...';
+    document.getElementById('gaugeCircle').style.strokeDashoffset = '264';
+  }
+}
+
+function resetResults() {
+  document.getElementById('scoreDisplay').textContent = '—';
+  document.getElementById('scoreLevelDisplay').textContent = 'Awaiting Input';
+  document.getElementById('gaugeCircle').style.strokeDashoffset = '264';
+  document.getElementById('scoreBreakdown').classList.add('hidden');
+  document.getElementById('verdictCard').classList.add('hidden');
+  document.getElementById('actionsPanel').classList.add('hidden');
+  document.getElementById('riskBgGlow').className = 'absolute inset-0 bg-gradient-to-br from-transparent to-transparent transition-all duration-700 pointer-events-none';
+  document.getElementById('signalsList').innerHTML = `
+    <div class="flex items-center gap-3 p-4 bg-bg4/40 rounded-xl text-txt-dim text-sm italic">
+      <span class="material-symbols-outlined text-txt-muted">radar</span>No signals yet — run an analysis
+    </div>`;
+  document.getElementById('explanationContent').innerHTML = `<p class="text-txt-dim text-sm leading-relaxed italic">Run an analysis to see the forensic explanation here.</p>`;
+}
+
+function renderAnalysisResult(data, inputText) {
+  const score = data.hybrid_score ?? data.risk_score ?? 0;
+  const prob  = data.probability ?? 0;
+  const rl    = (data.risk_level || 'Low — Clear').split('—')[0].trim().toLowerCase();
+  const verdict = data.verdict || (score >= 60 ? 'FRAUD' : 'LEGITIMATE');
+  const isFraud = verdict === 'FRAUD';
+
+  // Gauge
+  const pct = Math.min(score / 100, 1);
+  const circ = 264;
+  const offset = circ - (circ * pct);
+  const gauge = document.getElementById('gaugeCircle');
+  gauge.style.strokeDashoffset = offset;
+  gauge.setAttribute('stroke', isFraud ? 'url(#riskGrad)' : 'url(#safeGrad)');
+
+  // Score display
+  const scoreEl = document.getElementById('scoreDisplay');
+  scoreEl.textContent = score;
+  scoreEl.className = 'text-5xl font-black tracking-tighter ' + (isFraud ? 'text-red' : rl === 'medium' ? 'text-amber-lt' : 'text-green-400');
+
+  document.getElementById('scoreLevelDisplay').textContent = rl.charAt(0).toUpperCase() + rl.slice(1);
+
+  // Breakdown
+  document.getElementById('scoreBreakdown').classList.remove('hidden');
+  document.getElementById('mlProbDisplay').textContent = prob + '%';
+  document.getElementById('hybridDisplay').textContent = score;
+
+  // Background glow
+  const glowEl = document.getElementById('riskBgGlow');
+  glowEl.className = 'absolute inset-0 transition-all duration-700 pointer-events-none ' +
+    (isFraud ? 'bg-gradient-to-br from-red/5 to-transparent' : 'bg-gradient-to-br from-green-500/5 to-transparent');
+
+  // Verdict card
+  const vc = document.getElementById('verdictCard');
+  vc.classList.remove('hidden');
+  vc.className = 'p-5 rounded-2xl border flex items-center gap-4 animate-fadeup ' +
+    (isFraud ? 'bg-red/10 border-red/30' : 'bg-green-500/10 border-green-500/30');
+  document.getElementById('verdictIcon').textContent = isFraud ? 'gpp_bad' : 'verified_user';
+  document.getElementById('verdictIcon').className = 'material-symbols-outlined fill-icon text-4xl ' + (isFraud ? 'text-red' : 'text-green-400');
+  document.getElementById('verdictLabel').textContent = verdict;
+  document.getElementById('verdictLabel').className = 'text-xl font-black font-headline ' + (isFraud ? 'text-red' : 'text-green-400');
+  document.getElementById('verdictSub').textContent = data.risk_level || '';
+
+  // Signals
+  const allSigs = [...(data.signals || []), ...(data.flags || [])];
+  const sigHtml = allSigs.length > 0
+    ? allSigs.map(s => `
+        <div class="flex items-center justify-between p-4 bg-bg4/40 rounded-xl hover:bg-bg4 transition-colors animate-fadeup group">
+          <div class="flex items-center gap-3">
+            <div class="w-1 h-8 ${isFraud ? 'bg-red' : 'bg-amber-lt'} rounded-full flex-shrink-0"></div>
+            <div>
+              <p class="font-bold text-sm text-txt">${s}</p>
+            </div>
+          </div>
+          <span class="material-symbols-outlined ${isFraud ? 'text-red' : 'text-amber-lt'} fill-icon text-lg">
+            ${isFraud ? 'warning' : 'info'}
+          </span>
+        </div>`).join('')
+    : `<div class="flex items-center gap-3 p-4 bg-green-500/10 rounded-xl text-green-400 text-sm border border-green-500/20">
+        <span class="material-symbols-outlined fill-icon">check_circle</span> No risk signals detected
+      </div>`;
+  document.getElementById('signalsList').innerHTML = sigHtml;
+
+  // Explanation
+  if (data.explanation) {
+    document.getElementById('explanationContent').innerHTML = `
+      <p class="text-txt leading-relaxed opacity-90 text-sm">${data.explanation}</p>
+      ${data.risk_level ? `<div class="p-4 bg-bg4/40 rounded-lg border-l-4 ${isFraud ? 'border-red' : 'border-amber-lt'}">
+        <p class="text-xs italic text-txt-dim">"Risk Level: ${data.risk_level} — Model threshold: ${data.threshold_used ?? 10}%"</p>
+      </div>` : ''}`;
+  }
+
+  // Actions
+  if (data.actions && data.actions.length > 0) {
+    document.getElementById('actionsPanel').classList.remove('hidden');
+    const actionColors = {
+      block:   'border-red/40 text-red hover:bg-red/10',
+      review:  'border-amber-lt/40 text-amber-lt hover:bg-amber/10',
+      monitor: 'border-blue-400/40 text-blue-400 hover:bg-blue-400/10',
+      allow:   'border-green-400/40 text-green-400 hover:bg-green-400/10',
+      otp:     'border-amber/40 text-amber-lt hover:bg-amber/10',
+      notify:  'border-txt-dim/40 text-txt-dim hover:bg-bg4',
     };
+    const actionIcons = {
+      block:'block', review:'rate_review', monitor:'visibility', allow:'check_circle', otp:'key', notify:'notifications'
+    };
+    const grid = data.actions.length === 1
+      ? `<button class="col-span-2 py-4 rounded-xl border font-bold font-label uppercase tracking-widest text-sm flex items-center justify-center gap-2 transition-all ${getActionStyle(data.actions[0], actionColors)}"><span class="material-symbols-outlined">${getActionIcon(data.actions[0], actionIcons)}</span>${data.actions[0]}</button>`
+      : data.actions.map((a, i) => `<button class="py-4 rounded-xl border font-bold font-label uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all ${getActionStyle(a, actionColors)}"><span class="material-symbols-outlined text-sm">${getActionIcon(a, actionIcons)}</span>${a}</button>`).join('');
+    document.getElementById('actionButtons').innerHTML = grid;
+  }
 
-    // Clock
-    function tick() { document.getElementById('clock').textContent = new Date().toTimeString().split(' ')[0]; }
-    setInterval(tick, 1000); tick();
+  document.getElementById('analysisLoading').classList.add('hidden');
 
-    // Sidebar mobile
-    function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('sbBackdrop').classList.toggle('visible'); }
-    function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sbBackdrop').classList.remove('visible'); }
+  // Update signal frequency map
+  allSigs.forEach(s => { allSignals[s] = (allSignals[s] || 0) + 1; });
+}
 
-    // Animated counter
-    function animateCount(el, to) {
-        const from = parseInt(el.textContent) || 0;
-        if (from === to) return;
-        const step = to > from ? 1 : -1;
-        let cur = from;
-        const t = setInterval(() => {
-            cur += step;
-            el.textContent = cur;
-            if (cur === to) {
-                clearInterval(t);
-                el.style.animation = 'numPop 0.3s ease';
-                setTimeout(() => el.style.animation = '', 300);
-            }
-        }, 40);
-    }
+function getActionStyle(a, map) {
+  a = a.toLowerCase();
+  if (a.includes('block')) return map.block;
+  if (a.includes('review') || a.includes('manual') || a.includes('escalate')) return map.review;
+  if (a.includes('monitor')) return map.monitor;
+  if (a.includes('allow')) return map.allow;
+  if (a.includes('otp') || a.includes('verif')) return map.otp;
+  return map.notify;
+}
+function getActionIcon(a, map) {
+  a = a.toLowerCase();
+  if (a.includes('block')) return map.block;
+  if (a.includes('review') || a.includes('manual') || a.includes('escalate')) return map.review;
+  if (a.includes('monitor')) return map.monitor;
+  if (a.includes('allow')) return map.allow;
+  if (a.includes('otp') || a.includes('verif')) return map.otp;
+  return map.notify;
+}
 
-    function updateStats() {
-        animateCount(document.getElementById('statA'), sA);
-        animateCount(document.getElementById('statF'), sF);
-        animateCount(document.getElementById('statC'), sC);
-        const avg = document.getElementById('statAvg');
-        if (scores.length > 0) {
-            const mean = Math.round(scores.reduce((a,b) => a+b, 0) / scores.length);
-            avg.textContent = mean;
-            avg.style.color = mean >= 60 ? 'var(--red)' : mean >= 35 ? 'var(--yellow)' : 'var(--green)';
-        }
-    }
+function showError(msg) {
+  document.getElementById('explanationContent').innerHTML =
+    `<div class="p-4 bg-red/10 border border-red/30 rounded-xl text-red text-sm">${msg}</div>`;
+}
 
-    function setMode(m) {
-        mode = m;
-        const cfg = modes[m];
-        const inp = document.getElementById('msgInput');
-        inp.placeholder = cfg.ph;
-        inp.value = cfg.start;
-        document.getElementById('modeBadge').textContent = cfg.label;
-        document.getElementById('chatSub').textContent = cfg.sub;
-        autoResize(inp); inp.focus();
-        document.querySelectorAll('.sb-btn').forEach(b => b.classList.remove('active'));
-        const map = {transaction:'btnTxn', education:'btnEdu', prevention:'btnPrev', report:'btnRpt'};
-        if (map[m]) document.getElementById(map[m]).classList.add('active');
-        switchView('analysis'); closeSidebar();
-    }
+// ─── HISTORY ─────────────────────────────────────────────────────────────────
+function recordSession(input, data) {
+  const isFraud = (data.verdict || '') === 'FRAUD';
+  const score = data.hybrid_score ?? data.risk_score ?? 0;
+  const rl = (data.risk_level || 'Low — Clear').split('—')[0].trim().toLowerCase();
 
-    function switchView(v) {
-        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-        document.getElementById('histPanel').classList.remove('open');
-        document.getElementById('rptPanel').classList.remove('open');
-        document.getElementById('batchPanel').classList.remove('open');
-        if (v === 'analysis') {
-            document.getElementById('navAnalysis').classList.add('active');
-            document.getElementById('chatTitle').textContent = 'Analysis Terminal';
-        } else if (v === 'history') {
-            document.getElementById('navHistory').classList.add('active');
-            document.getElementById('chatTitle').textContent = 'Session History';
-            document.getElementById('histPanel').classList.add('open');
-            renderHistory();
-        } else if (v === 'reports') {
-            document.getElementById('navReports').classList.add('active');
-            document.getElementById('chatTitle').textContent = 'Risk Report';
-            document.getElementById('rptPanel').classList.add('open');
-            renderReport();
-        } else if (v === 'batch') {
-            document.getElementById('navBatch').classList.add('active');
-            document.getElementById('chatTitle').textContent = 'Batch Analysis';
-            document.getElementById('batchPanel').classList.add('open');
-        }
-        closeSidebar();
-    }
+  sessionHistory.unshift({
+    time: new Date().toTimeString().split(' ')[0],
+    desc: input.substring(0, 80) + (input.length > 80 ? '...' : ''),
+    prob: data.probability ?? 0,
+    hybrid: score,
+    verdict: data.verdict || 'LEGITIMATE',
+    riskLevel: data.risk_level || 'Low — Clear',
+    isFraud,
+    rl
+  });
 
-    function renderHistory() {
-        const body = document.getElementById('histBody');
-        if (!history.length) { body.innerHTML = '<div class="overlay-empty">No history yet.<br>Start a conversation to see it here.</div>'; return; }
-        body.innerHTML = '';
-        [...history].reverse().forEach(e => {
-            const hasScore = !!e.fd;
-            const bc = hasScore ? (e.fd.verdict === 'FRAUD' ? 'fraud' : 'legitimate') : 'info';
-            const bt = hasScore ? e.fd.verdict : 'INFO';
-            const rl = hasScore ? e.fd.risk_level.split('—')[0].trim().toLowerCase() : '';
-            const d = document.createElement('div'); d.className = 'hist-item';
-            d.innerHTML = `
-                <div class="hist-hdr"><div class="hist-time">${e.time}</div><div class="hist-badge ${bc}">${bt}</div></div>
-                <div class="hist-body">
-                    <div class="hist-user">▸ ${e.userMsg}</div>
-                    <div class="hist-resp">${e.assistantMsg}</div>
-                    ${hasScore ? `<div class="hist-score"><span>ML:</span><span class="hist-score-val ${rl}">${e.fd.probability}%</span><span>·</span><span>Hybrid:</span><span class="hist-score-val ${rl}">${e.fd.hybrid_score || e.fd.probability}</span><span>·</span><span>${e.fd.risk_level}</span></div>` : ''}
-                </div>`;
-            d.onclick = () => switchView('analysis');
-            body.appendChild(d);
-        });
-    }
+  stats.analysed++;
+  stats.scores.push(score);
+  if (isFraud) stats.flagged++; else stats.cleared++;
+  const r = rl;
+  if (r === 'critical') stats.critical++;
+  else if (r === 'high') stats.high++;
+  else if (r === 'medium') stats.medium++;
+  else stats.low++;
+}
 
-    function actionClass(a) {
-        if (a.includes('block')) return 'block';
-        if (a.includes('otp') || a.includes('verif')) return 'otp';
-        if (a.includes('review') || a.includes('manual') || a.includes('escalate')) return 'review';
-        if (a.includes('monitor')) return 'monitor';
-        return 'allow';
-    }
+function renderHistory() {
+  const term = (document.getElementById('histSearch').value || '').toLowerCase();
+  const filtered = sessionHistory.filter(h => h.desc.toLowerCase().includes(term));
+  document.getElementById('historyCount').textContent = filtered.length + ' record' + (filtered.length !== 1 ? 's' : '');
+  const body = document.getElementById('historyTableBody');
+  if (!filtered.length) {
+    body.innerHTML = `<tr><td colspan="6" class="px-6 py-12 text-center text-txt-muted text-sm font-label italic">No records found.</td></tr>`;
+    return;
+  }
+  body.innerHTML = filtered.map((h, i) => `
+    <tr class="hover:bg-bg4 cursor-pointer transition-colors ${h.isFraud ? 'bg-red/3' : ''}" onclick="jumpToAnalysis(${i})">
+      <td class="px-6 py-4 text-xs font-mono text-txt-dim">${h.time}</td>
+      <td class="px-6 py-4 text-sm text-txt max-w-xs truncate">${h.desc}</td>
+      <td class="px-6 py-4">
+        <span class="font-black font-label text-sm ${h.isFraud ? 'text-red' : h.rl === 'medium' ? 'text-amber-lt' : 'text-green-400'}">${h.prob}%</span>
+      </td>
+      <td class="px-6 py-4">
+        <div class="flex items-center gap-2">
+          <div class="w-1 h-6 rounded-full ${h.isFraud ? 'bg-red' : h.rl === 'medium' ? 'bg-amber-lt' : 'bg-green-400'}"></div>
+          <span class="font-black font-label text-sm ${h.isFraud ? 'text-red' : h.rl === 'medium' ? 'text-amber-lt' : 'text-green-400'}">${h.hybrid}/100</span>
+        </div>
+      </td>
+      <td class="px-6 py-4">
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[0.6rem] font-bold uppercase tracking-wider font-label border
+          ${h.isFraud ? 'bg-red/10 text-red border-red/20' : 'bg-green-500/10 text-green-400 border-green-500/20'}">
+          <span class="material-symbols-outlined fill-icon text-xs">${h.isFraud ? 'gpp_bad' : 'verified_user'}</span>
+          ${h.verdict}
+        </span>
+      </td>
+      <td class="px-6 py-4 text-xs text-txt-muted font-label">${h.riskLevel}</td>
+    </tr>`).join('');
+}
 
-    function renderReport() {
-        const body = document.getElementById('rptBody');
-        if (!lastFD) { body.innerHTML = '<div class="overlay-empty">No transaction analysed yet.<br>Run an analysis first.</div>'; return; }
-        const fd = lastFD, isFraud = fd.verdict === 'FRAUD', vc = isFraud ? 'fraud' : 'legitimate';
-        const rp = fd.risk_level.split('—'), rl = rp[0].trim(), ra = rp[1] ? rp[1].trim() : 'Monitor', rc = rl.toLowerCase();
-        const actionsHtml = (fd.actions || []).map(a => `<span class="inline-action ${actionClass(a)}">${a}</span>`).join('');
-        const flagsHtml = (fd.flags || []).length > 0 ? `<div class="rpt-card"><div class="rpt-card-hdr">Risk Flags (${fd.flags.length})</div>${fd.flags.map(f => `<div class="rpt-flag"><span class="rpt-flag-dot">!</span><span>${f}</span></div>`).join('')}</div>` : '';
-        const signalsHtml = (fd.signals || []).length > 0 ? `<div class="rpt-card"><div class="rpt-card-hdr">Rule Signals (${fd.signals.length})</div>${fd.signals.map(s => `<div class="rpt-flag"><span class="rpt-flag-dot">▸</span><span>${s}</span></div>`).join('')}</div>` : '';
+function filterHistory() { renderHistory(); }
 
-        body.innerHTML = `
-            <div class="rpt-verdict ${vc}">
-                <div class="rpt-verdict-icon">${isFraud ? '🔴' : '🟢'}</div>
-                <div><div class="rpt-verdict-lbl ${vc}">${fd.verdict}</div><div class="rpt-verdict-sub">${ra}</div></div>
+function jumpToAnalysis(i) {
+  showPage('analysis');
+  document.getElementById('txInput').value = sessionHistory[i].desc;
+}
+
+function clearHistory() {
+  sessionHistory = [];
+  stats = { analysed:0, flagged:0, cleared:0, scores:[], critical:0, high:0, medium:0, low:0 };
+  allSignals = {};
+  updateHeaderStats();
+  renderHistory();
+}
+
+function exportHistory() {
+  if (!sessionHistory.length) return;
+  const csv = ['time,description,ml_prob,hybrid_score,verdict,risk_level',
+    ...sessionHistory.map(h => `"${h.time}","${h.desc.replace(/"/g,"'")}",${h.prob},${h.hybrid},${h.verdict},"${h.riskLevel}"`)
+  ].join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
+  a.download = 'fraudguard-history-' + Date.now() + '.csv'; a.click();
+}
+
+// ─── HEADER STATS ────────────────────────────────────────────────────────────
+function updateHeaderStats() {
+  document.getElementById('hdrAnalysed').textContent = stats.analysed;
+  document.getElementById('hdrFlagged').textContent = stats.flagged;
+}
+
+// ─── REPORTS ─────────────────────────────────────────────────────────────────
+function renderReports() {
+  document.getElementById('rptTotal').textContent   = stats.analysed;
+  document.getElementById('rptFlagged').textContent = stats.flagged;
+  document.getElementById('rptCleared').textContent = stats.cleared;
+  const avg = stats.scores.length ? Math.round(stats.scores.reduce((a,b)=>a+b,0)/stats.scores.length) : 0;
+  document.getElementById('rptAvgScore').textContent = stats.scores.length ? avg : '—';
+
+  const t = Math.max(stats.analysed, 1);
+  document.getElementById('rptFlaggedPct').textContent = Math.round(stats.flagged/t*100) + '% of total';
+  document.getElementById('rptTotalBar').style.width = '100%';
+  document.getElementById('rptFlaggedBar').style.width = Math.round(stats.flagged/t*100) + '%';
+  document.getElementById('rptAvgBar').style.width = avg + '%';
+  document.getElementById('rptClearedBar').style.width = Math.round(stats.cleared/t*100) + '%';
+
+  // Risk bars
+  const mx = Math.max(stats.critical, stats.high, stats.medium, stats.low, 1);
+  document.getElementById('barCritical').style.width = Math.round(stats.critical/mx*100) + '%';
+  document.getElementById('barHigh').style.width = Math.round(stats.high/mx*100) + '%';
+  document.getElementById('barMedium').style.width = Math.round(stats.medium/mx*100) + '%';
+  document.getElementById('barLow').style.width = Math.round(stats.low/mx*100) + '%';
+  document.getElementById('cntCritical').textContent = stats.critical;
+  document.getElementById('cntHigh').textContent = stats.high;
+  document.getElementById('cntMedium').textContent = stats.medium;
+  document.getElementById('cntLow').textContent = stats.low;
+
+  // Top signals
+  const sorted = Object.entries(allSignals).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const maxS = sorted.length ? sorted[0][1] : 1;
+  document.getElementById('topSignalsList').innerHTML = sorted.length
+    ? sorted.map(([s, c]) => `
+        <div class="flex items-center gap-3">
+          <div class="flex-1">
+            <div class="flex justify-between mb-1 text-xs"><span class="text-txt font-bold">${s}</span><span class="text-amber-lt font-mono">${c}x</span></div>
+            <div class="h-1.5 w-full bg-bg5 rounded-full overflow-hidden">
+              <div class="h-full bg-amber rounded-full transition-all duration-700" style="width:${Math.round(c/maxS*100)}%"></div>
             </div>
-            <div class="rpt-card">
-                <div class="rpt-card-hdr">Model Assessment</div>
-                <div class="rpt-row"><span class="rpt-row-lbl">ML Probability</span><span class="rpt-row-val ${isFraud?'danger':'safe'}">${fd.probability}%</span></div>
-                <div class="rpt-row"><span class="rpt-row-lbl">Hybrid Score</span><span class="rpt-row-val ${rc==='low'?'safe':rc==='medium'?'warn':'danger'}">${fd.hybrid_score || fd.probability}</span></div>
-                <div class="rpt-row"><span class="rpt-row-lbl">Risk Level</span><span class="rpt-row-val ${rc==='low'?'safe':rc==='medium'?'warn':'danger'}">${rl}</span></div>
-                <div class="rpt-row"><span class="rpt-row-lbl">Decision Threshold</span><span class="rpt-row-val">${fd.threshold_used}%</span></div>
-                ${fd.explanation ? `<div class="rpt-explanation">"${fd.explanation}"</div>` : ''}
-                ${(fd.actions||[]).length > 0 ? `<div class="rpt-actions">${actionsHtml}</div>` : ''}
-            </div>
-            ${signalsHtml}
-            ${flagsHtml}
-            ${lastMsg ? `<div class="rpt-card"><div class="rpt-card-hdr">Transaction Description</div><div style="padding:11px 13px;font-size:12px;color:var(--text-dim);line-height:1.7">${lastMsg}</div></div>` : ''}
-            <div class="rpt-card"><div class="rpt-disclaimer">This report is generated by a hybrid ML + rule-based system trained on the NeurIPS 2022 Bank Account Fraud Dataset. Model confidence reflects statistical patterns only. High risk flags indicate the need for human review — not a definitive fraud verdict.</div></div>
-            <div class="rpt-ts">Generated: ${new Date().toLocaleString()}</div>`;
-    }
+          </div>
+        </div>`).join('')
+    : '<p class="text-txt-muted text-sm italic font-label">No signals recorded yet.</p>';
+}
 
-    function updateResultPanel(fd) {
-        if (!fd) return;
-        document.getElementById('resultEmpty').style.display = 'none';
-        const card = document.getElementById('resultCard');
-        card.classList.add('visible');
-        const rl = fd.risk_level.split('—')[0].trim().toLowerCase();
-        card.classList.remove('fraud-glow','safe-glow');
-        card.classList.add(fd.verdict === 'FRAUD' ? 'fraud-glow' : 'safe-glow');
+function exportReportJSON() {
+  const report = { generated: new Date().toISOString(), stats, history: sessionHistory, topSignals: allSignals };
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(report, null, 2)], {type:'application/json'}));
+  a.download = 'fraudguard-report-' + Date.now() + '.json'; a.click();
+}
 
-        const prob = document.getElementById('resultProb');
-        prob.textContent = fd.probability;
-        prob.className = `result-prob ${rl}`;
-        document.getElementById('resultHybrid').textContent = `hybrid score: ${fd.hybrid_score || fd.probability}`;
-        document.getElementById('resultVerdict').textContent = fd.verdict + ' — ' + fd.risk_level;
+// ─── BATCH ───────────────────────────────────────────────────────────────────
+let manualQueue = [];
 
-        const bar = document.getElementById('resultBar');
-        bar.style.width = Math.min((fd.hybrid_score || fd.probability) * 1.2, 100) + '%';
-        bar.className = `result-bar-fill ${rl}`;
+function addManualToBatch() {
+  const txn = {
+    id: `txn_${String(manualQueue.length + 1).padStart(3,'0')}`,
+    amount:         parseFloat(document.getElementById('mAmount').value) || undefined,
+    hour:           parseInt(document.getElementById('mHour').value) || undefined,
+    foreign_request:parseInt(document.getElementById('mForeign').value),
+    email_is_free:  parseInt(document.getElementById('mEmail').value),
+    device_os:      parseInt(document.getElementById('mDevice').value),
+    credit_risk_score: parseInt(document.getElementById('mCredit').value) || undefined,
+  };
+  Object.keys(txn).forEach(k => txn[k] === undefined && delete txn[k]);
+  manualQueue.push(txn);
+  document.getElementById('manualQueueInfo').textContent = `Queue: ${manualQueue.length} transaction${manualQueue.length !== 1 ? 's' : ''}`;
+  document.getElementById('runBatchBtn').disabled = false;
+}
 
-        const fl = document.getElementById('resultFlags'); fl.innerHTML = '';
-        (fd.flags || []).slice(0,3).forEach(f => {
-            const d = document.createElement('div'); d.className = 'result-flag';
-            d.innerHTML = `<span class="result-flag-dot">●</span><span>${f}</span>`;
-            fl.appendChild(d);
-        });
-    }
+function handleBatchFile(e) {
+  const f = e.target.files[0]; if (!f) return;
+  parseBatchCSV(f);
+}
+function handleBatchDrop(e) {
+  e.preventDefault();
+  const f = e.dataTransfer.files[0]; if (!f) return;
+  parseBatchCSV(f);
+}
 
-    function addInlineResult(fd) {
-        if (!fd) return;
-        const messages = document.getElementById('messages');
-        const isFraud = fd.verdict === 'FRAUD';
-        const vc = isFraud ? 'fraud' : 'legitimate';
-        const actionsHtml = (fd.actions || []).map(a => `<span class="inline-action ${actionClass(a)}">${a}</span>`).join('');
-        const div = document.createElement('div');
-        div.className = 'inline-result';
-        div.innerHTML = `
-            <div class="inline-result-header ${vc}">
-                <div class="inline-verdict ${vc}">${isFraud ? '🔴' : '🟢'} ${fd.verdict} — ${fd.risk_level}</div>
-                <div class="inline-scores"><span>ML: <b>${fd.probability}%</b></span><span>Hybrid: <b>${fd.hybrid_score || fd.probability}</b></span></div>
-            </div>
-            <div class="inline-result-body">
-                ${fd.explanation ? `<div class="inline-explanation">${fd.explanation}</div>` : ''}
-                <div class="inline-actions">${actionsHtml}</div>
-            </div>`;
-        messages.appendChild(div);
-        messages.scrollTop = messages.scrollHeight;
-    }
+function parseBatchCSV(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const lines = e.target.result.trim().split('\n').filter(Boolean);
+    if (lines.length < 2) return;
+    const headers = lines[0].split(',').map(h => h.trim());
+    batchQueue = lines.slice(1).map((line, i) => {
+      const vals = line.split(',').map(v => v.trim());
+      const row = {};
+      headers.forEach((h, j) => {
+        const v = vals[j] || '';
+        if (h === 'id') { row.id = v || `row_${i+1}`; return; }
+        if (['device_changed','location_changed'].includes(h)) { row[h] = v.toLowerCase() === 'true'; return; }
+        const n = parseFloat(v);
+        if (!isNaN(n)) row[h] = n;
+      });
+      if (!row.id) row.id = `row_${i+1}`;
+      return row;
+    });
+    document.getElementById('runBatchBtn').disabled = false;
+    document.getElementById('manualQueueInfo').textContent = `CSV: ${batchQueue.length} rows loaded from ${file.name}`;
+  };
+  reader.readAsText(file);
+}
 
-    function autoResize(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 130) + 'px'; }
-    function handleKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }
-    function handleImage(e) {
-        const f = e.target.files[0]; if (!f) return;
-        const r = new FileReader();
-        r.onload = ev => { img = ev.target.result; document.getElementById('previewImg').src = img; document.getElementById('imgBar').classList.add('visible'); };
-        r.readAsDataURL(f);
-    }
-    function removeImage() { img = null; document.getElementById('imgBar').classList.remove('visible'); document.getElementById('imgInput').value = ''; }
-    function getTime() { return new Date().toTimeString().split(' ')[0]; }
+async function runBatch() {
+  const allTxns = [...manualQueue, ...batchQueue];
+  if (!allTxns.length) return;
 
-    function addMessage(role, content) {
-        const w = document.getElementById('welcome'); if (w) w.remove();
-        const msgs = document.getElementById('messages');
-        const d = document.createElement('div'); d.className = `message ${role}`;
-        d.innerHTML = `
-            <div class="msg-header">
-                <div class="msg-avatar">${role === 'assistant' ? 'FG' : 'U'}</div>
-                <div class="msg-name">${role === 'assistant' ? 'FraudGuard' : 'You'}</div>
-                <div class="msg-time">${getTime()}</div>
-            </div>
-            <div class="msg-body">${content}</div>`;
-        msgs.appendChild(d); msgs.scrollTop = msgs.scrollHeight;
-    }
+  const btn = document.getElementById('runBatchBtn');
+  btn.disabled = true;
+  document.getElementById('runBatchBtnText').textContent = 'Processing...';
 
-    function showTyping() {
-        const m = document.getElementById('messages');
-        const d = document.createElement('div'); d.id = 'typing'; d.className = 'typing-wrap';
-        d.innerHTML = '<div class="typing-dots"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>';
-        m.appendChild(d); m.scrollTop = m.scrollHeight;
-    }
-    function removeTyping() { const t = document.getElementById('typing'); if (t) t.remove(); }
+  // Show progress card
+  const prog = document.getElementById('batchProgressCard');
+  prog.classList.remove('hidden');
+  document.getElementById('batchFileName').textContent = 'Batch Job ' + new Date().toTimeString().split(' ')[0];
+  document.getElementById('batchFileInfo').textContent = allTxns.length + ' transactions · Scoring now';
+  document.getElementById('batchProgressBar').style.width = '15%';
+  document.getElementById('batchPct').textContent = '15%';
 
-    function clearChat() {
-        document.getElementById('messages').innerHTML = '';
-        history = []; lastFD = null; lastMsg = null;
-        sA = 0; sF = 0; sC = 0; scores = []; updateStats();
-        document.getElementById('resultCard').classList.remove('visible','fraud-glow','safe-glow');
-        document.getElementById('resultEmpty').style.display = '';
-        fetch('/clear', {method:'POST'});
-    }
+  try {
+    document.getElementById('batchProgressBar').style.width = '45%';
+    document.getElementById('batchPct').textContent = '45%';
 
-    function exportChat() {
-        const msgs = document.querySelectorAll('.message');
-        let text = 'FRAUDGUARD SESSION EXPORT\n' + new Date().toISOString() + '\n\n';
-        msgs.forEach(m => {
-            const name = m.querySelector('.msg-name').textContent;
-            const body = m.querySelector('.msg-body').textContent;
-            const time = m.querySelector('.msg-time').textContent;
-            text += `[${time}] ${name}:\n${body}\n\n`;
-        });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(new Blob([text], {type:'text/plain'}));
-        a.download = 'fraudguard-session.txt'; a.click();
-    }
+    const res = await fetch('/analyze/batch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ transactions: allTxns })
+    });
+    document.getElementById('batchProgressBar').style.width = '85%';
+    document.getElementById('batchPct').textContent = '85%';
 
-    // ─── BATCH LOGIC ───
-    let bQueue = [], bCsvRows = [], bLastResults = null;
+    const data = await res.json();
+    document.getElementById('batchProgressBar').style.width = '100%';
+    document.getElementById('batchPct').textContent = '100%';
 
-    function switchBatchTab(t) {
-        document.querySelectorAll('.b-tab').forEach((b,i) => b.classList.toggle('active', (i===0&&t==='form')||(i===1&&t==='csv')));
-        document.getElementById('bTabForm').classList.toggle('active', t==='form');
-        document.getElementById('bTabCsv').classList.toggle('active', t==='csv');
-        bUpdateReady();
-    }
+    batchResults = data.results || [];
+    const s = data.summary || {};
 
-    function bVal(id) { return document.getElementById(id).value.trim(); }
+    // Update summary cards
+    document.getElementById('batchTotal').textContent = s.total || allTxns.length;
+    const flagged = s.flagged || batchResults.filter(r => r.verdict === 'FRAUD').length;
+    document.getElementById('batchFlagged').textContent = flagged;
+    document.getElementById('batchFlaggedPct').textContent = '+' + Math.round(flagged/(s.total||1)*100) + '%';
+    document.getElementById('batchCleared').textContent = (s.total || allTxns.length) - flagged;
 
-    function bAddToQueue() {
-        const id = bVal('bId') || `txn_${String(bQueue.length+1).padStart(3,'0')}`;
-        const t = {id};
-        const amount = parseFloat(bVal('bAmount')), avg = parseFloat(bVal('bAvg'));
-        const hour = parseInt(bVal('bHour')), credit = parseInt(bVal('bCredit'));
-        if (!isNaN(amount)) t.amount = amount;
-        if (!isNaN(avg)) t.avg_amount = avg;
-        if (!isNaN(hour)) t.hour = hour;
-        if (!isNaN(credit)) t.credit_risk_score = credit;
-        const housing = bVal('bHousing'), device = bVal('bDevice');
-        const email = bVal('bEmail'), cards = bVal('bCards');
-        if (housing !== '') t.housing_status = parseInt(housing);
-        if (device !== '') t.device_os = parseInt(device);
-        if (email !== '') t.email_is_free = parseInt(email);
-        if (cards !== '') t.has_other_cards = parseInt(cards);
-        t.foreign_request = parseInt(bVal('bForeign')) || 0;
-        t.device_changed = bVal('bDevChg') === 'true';
-        t.location_changed = bVal('bLocChg') === 'true';
-        bQueue.push(t);
-        bRenderQueue();
-        bUpdateReady();
-        document.getElementById('bId').value = `txn_${String(bQueue.length+1).padStart(3,'0')}`;
-    }
+    document.getElementById('batchScanned').textContent = (s.total || allTxns.length) + ' Scanned';
+    document.getElementById('batchFlaggedLive').textContent = flagged + ' Flagged';
 
-    function bRenderQueue() {
-        const n = bQueue.length;
-        document.getElementById('bQueueCount').textContent = n;
-        const card = document.getElementById('bQueueCard');
-        card.classList.toggle('visible', n > 0);
-        const body = document.getElementById('bQueueBody');
-        if (!n) { body.innerHTML = '<div class="b-empty">No transactions added yet.</div>'; return; }
-        body.innerHTML = `<table class="b-table">
-            <thead><tr><th>ID</th><th>Amount</th><th>Hour</th><th>Foreign</th><th>Dev Changed</th><th></th></tr></thead>
-            <tbody>${bQueue.map((t,i) => `<tr>
-                <td>${t.id}</td>
-                <td>${t.amount != null ? '₹'+t.amount.toLocaleString() : '—'}</td>
-                <td>${t.hour != null ? t.hour+':00' : '—'}</td>
-                <td>${t.foreign_request ? '⚠ Yes' : 'No'}</td>
-                <td>${t.device_changed ? '⚠ Yes' : 'No'}</td>
-                <td><button class="b-del" onclick="bRemove(${i})">✕</button></td>
-            </tr>`).join('')}</tbody></table>`;
-    }
+    renderBatchResults(batchResults);
+    setTimeout(() => prog.classList.add('hidden'), 1500);
 
-    function bRemove(i) { bQueue.splice(i,1); bRenderQueue(); bUpdateReady(); }
-    function bClearQueue() { bQueue=[]; bRenderQueue(); bUpdateReady(); }
-    function bClearForm() {
-        ['bId','bAmount','bAvg','bHour','bCredit'].forEach(id => document.getElementById(id).value='');
-        ['bHousing','bDevice','bEmail','bCards'].forEach(id => document.getElementById(id).value='');
-        document.getElementById('bForeign').value='0';
-        document.getElementById('bDevChg').value='false';
-        document.getElementById('bLocChg').value='false';
-    }
+  } catch(err) {
+    document.getElementById('batchProgressBar').style.width = '0%';
+    document.getElementById('batchFileInfo').textContent = 'Error: ' + err.message;
+  }
 
-    function bDragOver(e) { e.preventDefault(); document.getElementById('bDrop').classList.add('drag'); }
-    function bDragLeave() { document.getElementById('bDrop').classList.remove('drag'); }
-    function bDropFile(e) { e.preventDefault(); bDragLeave(); const f=e.dataTransfer.files[0]; if(f) bParseCSV(f); }
-    function bLoadCSV(e) { const f=e.target.files[0]; if(f) bParseCSV(f); }
+  btn.disabled = false;
+  document.getElementById('runBatchBtnText').textContent = 'Run Batch Analysis';
+  manualQueue = [];
+  batchQueue = [];
+  document.getElementById('manualQueueInfo').textContent = 'Queue: 0 transactions';
+}
 
-    function bParseCSV(file) {
-        const r = new FileReader();
-        r.onload = e => {
-            const lines = e.target.result.trim().split('\n').filter(Boolean);
-            if (lines.length < 2) { alert('CSV needs a header + at least one row.'); return; }
-            const headers = lines[0].split(',').map(h => h.trim());
-            bCsvRows = lines.slice(1).map((line,i) => {
-                const vals = line.split(',').map(v => v.trim());
-                const row = {};
-                headers.forEach((h,j) => {
-                    const v = vals[j] || '';
-                    if (h==='id') { row.id=v||`row_${i+1}`; return; }
-                    if (['device_changed','location_changed'].includes(h)) { row[h]=v.toLowerCase()==='true'; return; }
-                    const n = parseFloat(v);
-                    if (!isNaN(n)) row[h]=n;
-                });
-                if (!row.id) row.id=`row_${i+1}`;
-                return row;
-            });
-            const loaded = document.getElementById('bCsvLoaded');
-            loaded.style.display='block';
-            loaded.innerHTML=`<div class="b-csv-loaded">✅ &nbsp;<span>${bCsvRows.length} transactions loaded from <strong>${file.name}</strong></span><button class="b-csv-clear" onclick="bClearCSV()">Clear</button></div>`;
-            bUpdateReady();
-        };
-        r.readAsText(file);
-    }
+function renderBatchResults(results) {
+  const body = document.getElementById('batchResultsBody');
+  if (!results.length) {
+    body.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-txt-muted text-sm italic font-label">No results.</td></tr>`;
+    return;
+  }
+  body.innerHTML = results.map((r, i) => {
+    const isFraud = r.verdict === 'FRAUD';
+    const score = r.hybrid_score ?? r.risk_score ?? 0;
+    const rl = (r.risk_level || 'Low — Clear').split('—')[0].trim();
+    const rlClass = rl.toLowerCase() === 'critical' ? 'text-red' : rl.toLowerCase() === 'high' ? 'text-amber-lt' : rl.toLowerCase() === 'medium' ? 'text-blue-400' : 'text-green-400';
+    const acts = (r.actions || []).slice(0,2).map(a => `<span class="px-2 py-0.5 rounded border text-[10px] font-bold font-label uppercase ${isFraud ? 'border-red/30 text-red' : 'border-green-500/30 text-green-400'}">${a}</span>`).join('');
+    return `<tr class="hover:bg-bg4 transition-colors ${isFraud ? 'bg-red/3' : ''}" style="animation:fadeUp 0.2s ease ${i*0.02}s both">
+      <td class="p-4 font-mono text-xs text-txt-muted">${r.id || '—'}</td>
+      <td class="p-4"><span class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold font-label uppercase border ${isFraud ? 'bg-red/10 text-red border-red/20' : 'bg-green-500/10 text-green-400 border-green-500/20'}">${r.verdict}</span></td>
+      <td class="p-4 font-black font-label text-sm ${isFraud ? 'text-red' : 'text-green-400'}">${r.probability ?? 0}%</td>
+      <td class="p-4 font-black font-label text-sm ${isFraud ? 'text-red' : 'text-green-400'}">${score}</td>
+      <td class="p-4"><span class="text-xs font-bold font-label ${rlClass}">${rl}</span></td>
+      <td class="p-4"><div class="flex flex-wrap gap-1">${acts}</div></td>
+    </tr>`;
+  }).join('');
+}
 
-    function bClearCSV() { bCsvRows=[]; document.getElementById('bCsvLoaded').style.display='none'; document.getElementById('bCsvInput').value=''; bUpdateReady(); }
+function batchExportCSV() {
+  if (!batchResults.length) return;
+  const csv = ['id,verdict,probability,hybrid_score,risk_level,actions,explanation',
+    ...batchResults.map(r => `"${r.id}",${r.verdict},${r.probability},${r.hybrid_score||r.risk_score},"${r.risk_level}","${(r.actions||[]).join('; ')}","${(r.explanation||'').replace(/"/g,"'")}"`)
+  ].join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
+  a.download = 'fraudguard-batch-' + Date.now() + '.csv'; a.click();
+}
 
-    function bUpdateReady() {
-        const n = bQueue.length + bCsvRows.length;
-        document.getElementById('bReadyCount').textContent = n;
-        document.getElementById('bRunBtn').disabled = n===0;
-    }
-
-    function bActionClass(a) {
-        if (a.includes('block')) return 'block';
-        if (a.includes('otp')||a.includes('verif')) return 'otp';
-        if (a.includes('review')||a.includes('manual')||a.includes('escalate')) return 'review';
-        if (a.includes('monitor')) return 'monitor';
-        return 'allow';
-    }
-    function bScoreClass(s) { return s>=60?'danger':s>=35?'warn':'safe'; }
-    function bRiskClass(rl) { return (rl.split('—')[0].trim().toLowerCase()); }
-
-    function bAnimateVal(id, to) {
-        const el=document.getElementById(id); let cur=0;
-        const step=Math.max(1,Math.ceil(to/20));
-        const t=setInterval(()=>{ cur=Math.min(cur+step,to); el.textContent=cur; if(cur>=to) clearInterval(t); },40);
-    }
-
-    async function bRunBatch() {
-        const all = [...bQueue, ...bCsvRows];
-        if (!all.length) return;
-        const btn=document.getElementById('bRunBtn');
-        btn.disabled=true; btn.textContent='⏳ Processing...';
-        const prog=document.getElementById('bProg'), fill=document.getElementById('bProgFill');
-        prog.style.display='block'; fill.style.width='10%';
-        const body=document.getElementById('bResBody');
-        body.innerHTML='<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text-dim)"><span class="b-spinner"></span>Scoring transactions...</td></tr>';
-        document.getElementById('bSummary').classList.add('visible');
-        document.getElementById('bSummary').scrollIntoView({behavior:'smooth',block:'start'});
-
-        try {
-            fill.style.width='40%';
-            const res = await fetch('/analyze/batch', {
-                method:'POST', headers:{'Content-Type':'application/json'},
-                body: JSON.stringify({transactions: all})
-            });
-            fill.style.width='80%';
-            const data = await res.json();
-            fill.style.width='100%';
-            setTimeout(()=>{ prog.style.display='none'; fill.style.width='0%'; },500);
-            bLastResults=data;
-            const s=data.summary||{};
-            bAnimateVal('bsTotal', s.total||0);
-            bAnimateVal('bsCritical', s.critical||0);
-            bAnimateVal('bsHigh', s.high||0);
-            bAnimateVal('bsMedium', s.medium||0);
-            bAnimateVal('bsLow', s.low||0);
-            const results=data.results||[];
-            if (!results.length) { body.innerHTML='<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-muted)">No results returned.</td></tr>'; }
-            else {
-                body.innerHTML='';
-                results.forEach((r,i)=>{
-                    const isFraud=r.verdict==='FRAUD';
-                    const rc=bRiskClass(r.risk_level||'');
-                    const sc=bScoreClass(r.hybrid_score||r.probability||0);
-                    const acts=(r.actions||[]).map(a=>`<span class="b-apill ${bActionClass(a)}">${a}</span>`).join('');
-                    const tr=document.createElement('tr');
-                    if(isFraud) tr.classList.add('frow');
-                    tr.style.animation=`rowIn 0.2s ease ${i*0.025}s both`;
-                    tr.innerHTML=`
-                        <td class="b-id">${r.id||'—'}</td>
-                        <td><span class="b-vbadge ${isFraud?'fraud':'legitimate'}">${r.verdict}</span></td>
-                        <td class="b-score ${sc}">${r.probability}%</td>
-                        <td class="b-score ${sc}">${r.hybrid_score||r.probability}</td>
-                        <td><span class="b-rbadge ${rc}">${(r.risk_level||'').split('—')[0].trim()}</span></td>
-                        <td><div class="b-apills">${acts}</div></td>
-                        <td class="b-expl">${r.explanation||'—'}</td>`;
-                    body.appendChild(tr);
-                });
-            }
-        } catch(err) {
-            prog.style.display='none';
-            body.innerHTML='<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--red)">❌ Request failed. Is the server running?</td></tr>';
-        }
-        btn.disabled=false; btn.innerHTML='⚡ Run Batch Analysis'; bUpdateReady();
-    }
-
-    function bExportCSV() {
-        if (!bLastResults?.results) return;
-        const rows=bLastResults.results;
-        const h=['id','verdict','probability','hybrid_score','risk_level','flags','signals','actions','explanation'];
-        const csv=[h.join(','),...rows.map(r=>[
-            r.id,r.verdict,r.probability,r.hybrid_score||r.probability,
-            '"'+r.risk_level+'"','"'+(r.flags||[]).join('; ')+'"',
-            '"'+(r.signals||[]).join('; ')+'"','"'+(r.actions||[]).join('; ')+'"',
-            '"'+(r.explanation||'').replace(/"/g,"'")+'"'
-        ].join(','))].join('\n');
-        const a=document.createElement('a');
-        a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
-        a.download=`fraudguard-batch-${Date.now()}.csv`; a.click();
-    }
-
-    function bExportJSON() {
-        if (!bLastResults) return;
-        const a=document.createElement('a');
-        a.href=URL.createObjectURL(new Blob([JSON.stringify(bLastResults,null,2)],{type:'application/json'}));
-        a.download=`fraudguard-batch-${Date.now()}.json`; a.click();
-    }
-</script>
-        const input = document.getElementById('msgInput');
-        const btn = document.getElementById('sendBtn');
-        const message = input.value.trim();
-        if (!message && !img) return;
-
-        lastMsg = message;
-        addMessage('user', message || '[Screenshot uploaded for analysis]');
-        input.value = ''; input.style.height = 'auto'; btn.disabled = true;
-        const imgToSend = img; removeImage(); showTyping();
-
-        try {
-            const res = await fetch('/chat', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({message, image: imgToSend, mode})
-            });
-            const data = await res.json();
-            removeTyping();
-            addMessage('assistant', data.message);
-
-            if (data.fraud_data) {
-                const fd = data.fraud_data;
-                lastFD = fd;
-                addInlineResult(fd);
-                updateResultPanel(fd);
-                sA++;
-                if (fd.verdict === 'FRAUD') sF++;
-                else sC++;
-                scores.push(fd.hybrid_score || fd.probability);
-                updateStats();
-            }
-
-            history.push({time: getTime(), userMsg: message || '[Screenshot]', assistantMsg: data.message, fd: data.fraud_data || null});
-        } catch (err) {
-            removeTyping();
-            addMessage('assistant', 'Connection error. Please try again.');
-        }
-        btn.disabled = false; input.focus();
-    }
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+showPage('analysis');
 </script>
 </body>
 </html>
