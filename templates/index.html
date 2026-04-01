@@ -1,671 +1,1285 @@
 <!DOCTYPE html>
-<html class="dark" lang="en">
+<html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>FraudGuard | Forensic Suite</title>
-<script src="https://cdn.tailwindcss.com?plugins=forms"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
-<script>
-tailwind.config = {
-  darkMode: "class",
-  theme: {
-    extend: {
-      colors: {
-        "bg":        "#131313",
-        "bg2":       "#1c1b1b",
-        "bg3":       "#201f1f",
-        "bg4":       "#2a2a2a",
-        "bg5":       "#353534",
-        "border-c":  "#554337",
-        "amber":     "#e07b2a",
-        "amber-lt":  "#ffb786",
-        "amber-pale":"#ffdcc6",
-        "red":       "#ffb4ab",
-        "red-c":     "#93000a",
-        "on-red":    "#690005",
-        "txt":       "#e5e2e1",
-        "txt-dim":   "#a38c7e",
-        "txt-muted": "#554337",
-      },
-      fontFamily: {
-        headline: ["Inter"],
-        body:     ["Inter"],
-        label:    ["Space Grotesk"],
-      },
-      borderRadius: { DEFAULT:"0.25rem", lg:"0.5rem", xl:"0.75rem", "2xl":"1rem", "3xl":"1.5rem", full:"9999px" },
-    }
-  }
-}
-</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FraudGuard — Intelligence Terminal</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  * { box-sizing: border-box; }
-  .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; }
-  .fill-icon { font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24; }
-  .glass { background: rgba(32,31,31,0.7); backdrop-filter: blur(12px); }
-  ::-webkit-scrollbar { width:5px; }
-  ::-webkit-scrollbar-track { background:#131313; }
-  ::-webkit-scrollbar-thumb { background:#2a2a2a; border-radius:10px; }
-  .amber-grad { background: linear-gradient(to bottom, #ffb786, #e07b2a); }
-  .page { display:none; }
-  .page.active { display:block; }
-  @keyframes spin { to { transform:rotate(360deg); } }
-  @keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
-  @keyframes pulse-glow { 0%,100% { box-shadow:0 0 0 0 rgba(224,123,42,0); } 50% { box-shadow:0 0 20px 4px rgba(224,123,42,0.3); } }
-  .spinner { display:inline-block; width:18px; height:18px; border:2px solid rgba(255,183,134,0.2); border-top-color:#ffb786; border-radius:50%; animation:spin 0.7s linear infinite; }
-  .animate-fadeup { animation: fadeUp 0.3s ease forwards; }
-  .gauge-circle { transition: stroke-dashoffset 1s cubic-bezier(0.4,0,0.2,1); }
-  .nav-link { transition: all 0.2s ease; }
-  .nav-link:hover { transform: translateX(3px); }
-  input, textarea, select { color-scheme: dark; }
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+:root {
+  --bg:       #0a0a0a;
+  --bg2:      #111111;
+  --bg3:      #161616;
+  --bg4:      #1c1c1c;
+  --bg5:      #222222;
+  --line:     #2a2a2a;
+  --line2:    #333333;
+  --orange:   #ff6600;
+  --orange2:  #ff8833;
+  --orange-d: rgba(255,102,0,0.12);
+  --orange-g: rgba(255,102,0,0.06);
+  --green:    #00cc44;
+  --green-d:  rgba(0,204,68,0.1);
+  --red:      #ff3333;
+  --red-d:    rgba(255,51,51,0.1);
+  --yellow:   #ffcc00;
+  --yellow-d: rgba(255,204,0,0.1);
+  --cyan:     #00ccff;
+  --cyan-d:   rgba(0,204,255,0.08);
+  --txt:      #e8e8e8;
+  --txt2:     #888888;
+  --txt3:     #444444;
+  --mono:     'IBM Plex Mono', monospace;
+  --sans:     'IBM Plex Sans', sans-serif;
+}
+
+html, body { height:100%; overflow:hidden; }
+
+body {
+  background: var(--bg);
+  color: var(--txt);
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.5;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── TOPBAR ── */
+.topbar {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--orange);
+  padding: 0 16px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  position: relative;
+}
+.topbar::after {
+  content: '';
+  position: absolute;
+  bottom: -3px; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--orange), transparent);
+  opacity: 0.4;
+}
+
+.brand {
+  display: flex; align-items: center; gap: 10px;
+}
+.brand-box {
+  background: var(--orange);
+  color: #000;
+  font-weight: 700;
+  font-size: 11px;
+  padding: 2px 7px;
+  letter-spacing: 1px;
+}
+.brand-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--orange);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.brand-ver {
+  font-size: 10px;
+  color: var(--txt3);
+  letter-spacing: 1px;
+}
+
+.topbar-nav {
+  display: flex;
+  gap: 0;
+  height: 100%;
+}
+.tnav {
+  padding: 0 14px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--txt2);
+  cursor: pointer;
+  display: flex; align-items: center;
+  border-left: 1px solid var(--line);
+  transition: all 0.1s;
+  user-select: none;
+  background: none; border-top: none; border-right: none; border-bottom: none;
+  font-family: var(--mono);
+}
+.tnav:first-child { border-left: 1px solid var(--line); }
+.tnav:hover { color: var(--txt); background: var(--bg3); }
+.tnav.active {
+  color: #000;
+  background: var(--orange);
+  border-color: var(--orange);
+}
+
+.topbar-right {
+  display: flex; align-items: center; gap: 14px;
+}
+.status-live {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 10px; color: var(--green);
+  letter-spacing: 1px;
+}
+.status-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 6px var(--green);
+  animation: blink 2s ease infinite;
+}
+.topbar-stat {
+  font-size: 10px;
+  color: var(--txt2);
+  letter-spacing: 0.5px;
+}
+.topbar-stat b { color: var(--orange); }
+#topClock { font-size: 11px; color: var(--txt3); letter-spacing: 1px; }
+
+/* ── LAYOUT ── */
+.layout { flex:1; display:flex; overflow:hidden; }
+
+/* ── SIDEBAR ── */
+.sidebar {
+  width: 200px;
+  flex-shrink: 0;
+  background: var(--bg2);
+  border-right: 1px solid var(--line);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+
+.sb-section { border-bottom: 1px solid var(--line); }
+.sb-header {
+  padding: 5px 10px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--orange);
+  background: var(--orange-g);
+  border-bottom: 1px solid var(--line);
+}
+.sb-btn {
+  width: 100%;
+  padding: 8px 10px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--line);
+  color: var(--txt2);
+  font-family: var(--mono);
+  font-size: 11px;
+  text-align: left;
+  cursor: pointer;
+  display: flex; align-items: center; gap: 8px;
+  transition: all 0.1s;
+  letter-spacing: 0.5px;
+}
+.sb-btn:hover { background: var(--bg3); color: var(--txt); }
+.sb-btn.active { background: var(--orange-d); color: var(--orange); border-left: 2px solid var(--orange); }
+.sb-btn:last-child { border-bottom: none; }
+.sb-key {
+  margin-left: auto;
+  font-size: 9px;
+  color: var(--txt3);
+  background: var(--bg4);
+  padding: 1px 5px;
+  border: 1px solid var(--line2);
+}
+
+/* RESULT PANEL */
+.result-panel {
+  margin-top: auto;
+  border-top: 1px solid var(--line);
+}
+.result-header {
+  padding: 5px 10px;
+  font-size: 9px; font-weight: 700;
+  letter-spacing: 2px; text-transform: uppercase;
+  color: var(--txt3); background: var(--bg3);
+  border-bottom: 1px solid var(--line);
+}
+.result-body { padding: 10px; }
+.result-score {
+  font-size: 36px; font-weight: 700; line-height: 1;
+  margin-bottom: 2px;
+}
+.result-score.low { color: var(--green); }
+.result-score.medium { color: var(--yellow); }
+.result-score.high, .result-score.critical { color: var(--red); }
+.result-label { font-size: 10px; color: var(--txt2); letter-spacing: 1px; margin-bottom: 8px; }
+.result-bar-track {
+  height: 3px; background: var(--line2);
+  margin-bottom: 8px;
+}
+.result-bar-fill {
+  height: 100%; transition: width 0.6s ease;
+}
+.result-bar-fill.low { background: var(--green); }
+.result-bar-fill.medium { background: var(--yellow); }
+.result-bar-fill.high, .result-bar-fill.critical { background: var(--red); }
+.result-flags { display: flex; flex-direction: column; gap: 3px; }
+.result-flag { font-size: 10px; color: var(--txt2); display: flex; gap: 5px; }
+.result-flag::before { content: '▸'; color: var(--red); flex-shrink: 0; }
+.result-empty { font-size: 10px; color: var(--txt3); line-height: 1.6; }
+.result-hybrid { font-size: 10px; color: var(--txt3); margin-bottom: 6px; }
+.result-hybrid b { color: var(--orange); }
+
+/* ── MAIN PANEL ── */
+.main-panel { flex:1; display:flex; flex-direction:column; overflow:hidden; min-width:0; }
+
+/* TICKER BAR */
+.ticker {
+  background: var(--bg3);
+  border-bottom: 1px solid var(--line);
+  padding: 4px 16px;
+  display: flex; align-items: center; gap: 20px;
+  flex-shrink: 0; overflow: hidden;
+}
+.tick-item { display:flex; align-items:center; gap:6px; font-size:10px; }
+.tick-label { color: var(--txt3); letter-spacing: 1px; }
+.tick-val { font-weight: 600; }
+.tick-val.up { color: var(--green); }
+.tick-val.down { color: var(--red); }
+.tick-val.neutral { color: var(--txt2); }
+.tick-sep { color: var(--line2); }
+
+/* PAGE HEADER */
+.page-header {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--line);
+  padding: 8px 16px;
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0;
+}
+.page-title { font-size: 11px; font-weight: 600; color: var(--orange); letter-spacing: 2px; text-transform: uppercase; }
+.page-sub { font-size: 10px; color: var(--txt3); letter-spacing: 0.5px; margin-top: 1px; }
+.page-actions { display:flex; gap:6px; }
+.hdr-btn {
+  background: var(--bg4);
+  border: 1px solid var(--line2);
+  color: var(--txt2);
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 4px 10px;
+  cursor: pointer;
+  letter-spacing: 1px;
+  transition: all 0.1s;
+  text-transform: uppercase;
+}
+.hdr-btn:hover { border-color: var(--orange); color: var(--orange); }
+
+/* PAGES */
+.page { display:none; flex:1; overflow:hidden; flex-direction:column; }
+.page.active { display:flex; }
+.page-scroll { flex:1; overflow-y:auto; padding:14px 16px; }
+.page-scroll::-webkit-scrollbar { width:4px; }
+.page-scroll::-webkit-scrollbar-thumb { background: var(--line2); }
+
+/* ── ANALYSIS PAGE ── */
+.analysis-grid {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 12px;
+}
+
+/* PANEL CARD */
+.panel {
+  background: var(--bg2);
+  border: 1px solid var(--line);
+}
+.panel-head {
+  padding: 5px 10px;
+  background: var(--bg3);
+  border-bottom: 1px solid var(--line);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.panel-title {
+  font-size: 9px; font-weight: 700;
+  letter-spacing: 2px; text-transform: uppercase;
+  color: var(--orange);
+}
+.panel-badge {
+  font-size: 9px; color: var(--txt3);
+  background: var(--bg4);
+  padding: 1px 6px;
+  border: 1px solid var(--line);
+  letter-spacing: 0.5px;
+}
+.panel-body { padding: 12px; }
+
+/* INPUT */
+.input-area {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--line2);
+  color: var(--txt);
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 10px;
+  resize: none;
+  outline: none;
+  line-height: 1.6;
+  transition: border-color 0.15s;
+}
+.input-area:focus { border-color: var(--orange); }
+.input-area::placeholder { color: var(--txt3); }
+
+.input-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: 8px;
+}
+.input-meta { font-size: 10px; color: var(--txt3); display:flex; gap:14px; }
+.run-btn {
+  background: var(--orange);
+  border: none;
+  color: #000;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 7px 20px;
+  cursor: pointer;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  transition: all 0.1s;
+  display: flex; align-items: center; gap: 6px;
+}
+.run-btn:hover { background: var(--orange2); }
+.run-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.sample-btns { display:flex; gap:5px; margin-bottom:8px; }
+.sample-btn {
+  background: var(--bg4); border: 1px solid var(--line2);
+  color: var(--txt3); font-family: var(--mono); font-size: 9px;
+  padding: 3px 8px; cursor: pointer;
+  letter-spacing: 0.5px; text-transform: uppercase;
+  transition: all 0.1s;
+}
+.sample-btn:hover { border-color: var(--orange); color: var(--orange); }
+.sample-btn.red:hover { border-color: var(--red); color: var(--red); }
+.sample-btn.green:hover { border-color: var(--green); color: var(--green); }
+
+/* GAUGE */
+.gauge-wrap { display:flex; flex-direction:column; align-items:center; padding: 12px; }
+.gauge-svg { width:140px; height:140px; }
+.gauge-legend {
+  width: 100%;
+  display: grid; grid-template-columns: repeat(3,1fr);
+  text-align: center;
+  font-size: 9px; color: var(--txt3);
+  letter-spacing: 0.5px;
+  margin-top: 8px;
+  border: 1px solid var(--line);
+}
+.gauge-legend-item { padding: 3px 2px; border-right: 1px solid var(--line); }
+.gauge-legend-item:last-child { border-right: none; }
+.gauge-legend-item.active-leg { background: var(--bg3); }
+.score-breakdown {
+  width: 100%;
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 1px; background: var(--line);
+  border: 1px solid var(--line);
+  margin-top: 8px;
+}
+.score-breakdown-item {
+  background: var(--bg3);
+  padding: 7px 10px;
+}
+.sbi-label { font-size: 9px; color: var(--txt3); letter-spacing: 1px; text-transform: uppercase; }
+.sbi-val { font-size: 20px; font-weight: 700; margin-top: 2px; }
+
+/* SIGNALS */
+.signal-item {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+  transition: background 0.1s;
+}
+.signal-item:last-child { border-bottom: none; }
+.signal-item:hover { background: var(--bg3); }
+.signal-bar { width: 2px; flex-shrink: 0; align-self: stretch; min-height: 20px; }
+.signal-text { font-size: 11px; color: var(--txt); flex:1; line-height:1.4; }
+.signal-icon { font-size: 13px; flex-shrink:0; }
+
+/* EXPLANATION */
+.explanation-text { font-size: 11px; color: var(--txt2); line-height: 1.8; padding: 10px 12px; font-family: var(--sans); }
+.explanation-quote {
+  border-left: 2px solid var(--orange);
+  padding: 6px 10px;
+  margin: 8px 12px;
+  font-size: 11px; color: var(--txt3);
+  font-style: italic; font-family: var(--sans);
+  background: var(--orange-g);
+}
+
+/* VERDICT */
+.verdict-banner {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px;
+  border-left: 3px solid;
+}
+.verdict-banner.fraud { border-color: var(--red); background: var(--red-d); }
+.verdict-banner.legit { border-color: var(--green); background: var(--green-d); }
+.verdict-icon { font-size: 20px; }
+.verdict-text { font-size: 14px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
+.verdict-text.fraud { color: var(--red); }
+.verdict-text.legit { color: var(--green); }
+.verdict-sub { font-size: 10px; color: var(--txt2); margin-top: 1px; letter-spacing: 0.5px; }
+
+/* ACTIONS */
+.action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line); }
+.action-btn-item {
+  padding: 10px 12px;
+  background: var(--bg3);
+  display: flex; align-items: center; gap: 7px;
+  cursor: pointer; transition: background 0.1s;
+  border: none; font-family: var(--mono);
+  text-align: left; width: 100%;
+}
+.action-btn-item:hover { background: var(--bg4); }
+.action-btn-item.full { grid-column: span 2; }
+.abi-icon { font-size: 14px; flex-shrink:0; }
+.abi-text { font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; }
+.abi-sub { font-size: 9px; color: var(--txt3); margin-top: 1px; }
+
+/* LOADING */
+.loading-wrap {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px;
+  font-size: 11px; color: var(--txt3);
+}
+.ld-dots { display:flex; gap:3px; }
+.ld-dot { width:5px; height:5px; background: var(--orange); animation: ldpulse 1s ease infinite; }
+.ld-dot:nth-child(2) { animation-delay:0.15s; }
+.ld-dot:nth-child(3) { animation-delay:0.3s; }
+
+/* ── HISTORY PAGE ── */
+.filter-bar {
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  display: flex; align-items: center;
+  margin-bottom: 10px;
+}
+.filter-input {
+  flex:1; background: none; border: none;
+  color: var(--txt); font-family: var(--mono); font-size: 11px;
+  padding: 7px 10px; outline: none;
+}
+.filter-input::placeholder { color: var(--txt3); }
+.filter-sep { width: 1px; background: var(--line); height: 28px; flex-shrink:0; }
+.filter-btn {
+  padding: 7px 12px; background: none; border: none;
+  color: var(--txt3); font-family: var(--mono); font-size: 10px;
+  cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px;
+  transition: all 0.1s; white-space: nowrap;
+}
+.filter-btn:hover { color: var(--orange); }
+.filter-btn.danger:hover { color: var(--red); }
+
+.data-table { width:100%; border-collapse:collapse; background: var(--bg2); border: 1px solid var(--line); }
+.data-table th {
+  padding: 6px 10px; background: var(--bg3);
+  font-size: 9px; font-weight: 700; letter-spacing: 2px;
+  text-transform: uppercase; color: var(--txt3);
+  border-bottom: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+  text-align: left; white-space: nowrap;
+}
+.data-table th:last-child { border-right: none; }
+.data-table td {
+  padding: 7px 10px; font-size: 11px;
+  border-bottom: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+  vertical-align: middle;
+}
+.data-table td:last-child { border-right: none; }
+.data-table tr:hover td { background: var(--bg3); cursor: pointer; }
+.data-table tr.fraud-row td { background: rgba(255,51,51,0.03); }
+.table-footer {
+  padding: 5px 10px; background: var(--bg3);
+  border-top: 1px solid var(--line);
+  font-size: 9px; color: var(--txt3);
+  letter-spacing: 1px;
+}
+
+.badge {
+  display: inline-block;
+  font-size: 9px; font-weight: 700;
+  padding: 2px 7px; letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.badge.fraud { background: var(--red-d); color: var(--red); border: 1px solid rgba(255,51,51,0.3); }
+.badge.legit { background: var(--green-d); color: var(--green); border: 1px solid rgba(0,204,68,0.3); }
+.badge.info  { background: var(--orange-d); color: var(--orange); border: 1px solid rgba(255,102,0,0.3); }
+.badge.crit  { background: var(--red-d); color: var(--red); border: 1px solid rgba(255,51,51,0.3); }
+.badge.high  { background: var(--yellow-d); color: var(--yellow); border: 1px solid rgba(255,204,0,0.3); }
+.badge.med   { background: var(--cyan-d); color: var(--cyan); border: 1px solid rgba(0,204,255,0.3); }
+.badge.low   { background: var(--green-d); color: var(--green); border: 1px solid rgba(0,204,68,0.3); }
+
+/* ── BATCH PAGE ── */
+.batch-summary {
+  display: grid; grid-template-columns: repeat(3,1fr);
+  gap: 1px; background: var(--line);
+  border: 1px solid var(--line);
+  margin-bottom: 12px;
+}
+.bs-card {
+  background: var(--bg2); padding: 12px;
+  border-left: 3px solid var(--line2);
+}
+.bs-card.orange { border-left-color: var(--orange); }
+.bs-card.red    { border-left-color: var(--red); }
+.bs-card.green  { border-left-color: var(--green); }
+.bs-label { font-size: 9px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--txt3); margin-bottom: 6px; }
+.bs-val { font-size: 28px; font-weight: 700; line-height: 1; }
+.bs-val.orange { color: var(--orange); }
+.bs-val.red    { color: var(--red); }
+.bs-val.green  { color: var(--green); }
+.bs-sub { font-size: 10px; color: var(--txt3); margin-top: 3px; }
+
+.batch-grid { display:grid; grid-template-columns: 1fr 260px; gap:12px; }
+
+.progress-bar-track { height: 4px; background: var(--line2); margin: 8px 0; }
+.progress-bar-fill {
+  height: 100%; background: var(--orange);
+  transition: width 0.4s ease; width: 0%;
+}
+
+.drop-zone {
+  border: 1px dashed var(--line2);
+  padding: 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-size: 11px; color: var(--txt3);
+}
+.drop-zone:hover, .drop-zone.drag { border-color: var(--orange); color: var(--orange); background: var(--orange-g); }
+.drop-icon { font-size: 28px; margin-bottom: 8px; }
+
+.form-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px; }
+.form-field { display:flex; flex-direction:column; gap:3px; }
+.form-label { font-size: 9px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color: var(--txt3); }
+.form-input, .form-select {
+  background: var(--bg);
+  border: 1px solid var(--line2);
+  color: var(--txt);
+  font-family: var(--mono);
+  font-size: 11px; padding: 5px 8px;
+  outline: none; transition: border-color 0.1s;
+  width: 100%;
+}
+.form-input:focus, .form-select:focus { border-color: var(--orange); }
+.form-select option { background: var(--bg3); }
+
+.form-hint { font-size: 9px; color: var(--txt3); letter-spacing:0.3px; }
+
+.add-btn {
+  width: 100%;
+  background: var(--bg4); border: 1px solid var(--line2);
+  color: var(--orange); font-family: var(--mono); font-size: 11px;
+  font-weight: 700; padding: 8px;
+  cursor: pointer; letter-spacing: 1px; text-transform: uppercase;
+  transition: all 0.1s;
+}
+.add-btn:hover { background: var(--orange-d); border-color: var(--orange); }
+
+.run-batch-btn {
+  width: 100%; background: var(--orange); border: none;
+  color: #000; font-family: var(--mono); font-size: 12px;
+  font-weight: 700; padding: 11px;
+  cursor: pointer; letter-spacing: 1.5px; text-transform: uppercase;
+  transition: all 0.1s; margin-top: 10px;
+}
+.run-batch-btn:hover { background: var(--orange2); }
+.run-batch-btn:disabled { opacity:0.4; cursor:not-allowed; }
+
+.csv-format {
+  background: var(--bg3); border: 1px solid var(--line2);
+  padding: 8px 10px; margin-top: 10px;
+}
+.csv-fmt-label { font-size: 9px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color: var(--txt3); margin-bottom:6px; }
+.csv-fmt-code { font-size: 9px; color: var(--orange); line-height: 1.8; }
+
+/* ── REPORTS PAGE ── */
+.reports-grid {
+  display: grid; grid-template-columns: repeat(4,1fr);
+  gap: 1px; background: var(--line);
+  border: 1px solid var(--line);
+  margin-bottom: 12px;
+}
+.rpt-metric {
+  background: var(--bg2); padding: 12px;
+  border-left: 3px solid;
+}
+.rpt-metric-label { font-size: 9px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color: var(--txt3); margin-bottom: 6px; }
+.rpt-metric-val { font-size: 26px; font-weight: 700; line-height: 1; }
+.rpt-metric-bar { height: 2px; background: var(--line2); margin-top: 10px; }
+.rpt-metric-bar-fill { height: 100%; transition: width 0.7s ease; width:0%; }
+.rpt-metric-sub { font-size: 9px; color: var(--txt3); margin-top: 4px; letter-spacing: 0.5px; }
+
+.reports-bottom { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.dist-row { display:flex; align-items:center; gap:8px; padding: 5px 0; border-bottom: 1px solid var(--line); }
+.dist-row:last-child { border-bottom: none; }
+.dist-label { font-size: 10px; font-weight:700; letter-spacing:1px; text-transform:uppercase; width:60px; flex-shrink:0; }
+.dist-track { flex:1; height:3px; background: var(--line2); }
+.dist-fill { height:100%; transition: width 0.7s ease; width:0%; }
+.dist-count { font-size: 11px; font-weight:700; width:20px; text-align:right; }
+
+.signal-freq { display: flex; flex-direction:column; gap:0; }
+.sf-row { display:flex; align-items:center; gap:8px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+.sf-row:last-child { border-bottom:none; }
+.sf-name { font-size:10px; color: var(--txt); flex:1; line-height:1.3; }
+.sf-count { font-size:11px; font-weight:700; color: var(--orange); font-family: var(--mono); white-space:nowrap; }
+.sf-bar { height:2px; background: var(--orange-d); margin-top:3px; }
+.sf-bar-fill { height:100%; background: var(--orange); transition: width 0.7s ease; }
+
+/* ── RESPONSIVE / MOBILE ── */
+.mob-toggle {
+  display: none;
+  background: none; border: 1px solid var(--line);
+  color: var(--txt2); padding: 4px 10px;
+  cursor: pointer; font-family: var(--mono); font-size: 13px;
+}
+
+@media (max-width: 900px) {
+  .sidebar { display: none; }
+  .sidebar.mob-open { display: flex; position:fixed; top:38px; left:0; bottom:0; z-index:100; }
+  .mob-toggle { display: block; }
+  .analysis-grid { grid-template-columns: 1fr; }
+  .batch-grid { grid-template-columns: 1fr; }
+  .reports-grid { grid-template-columns: repeat(2,1fr); }
+  .reports-bottom { grid-template-columns: 1fr; }
+  .batch-summary { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .topbar-nav { display: none; }
+  .reports-grid { grid-template-columns: 1fr 1fr; }
+  .form-grid { grid-template-columns: 1fr; }
+}
+
+/* ── ANIMATIONS ── */
+@keyframes blink { 0%,100%{opacity:0.5;} 50%{opacity:1;} }
+@keyframes ldpulse { 0%,100%{opacity:0.3;transform:scaleY(0.6);} 50%{opacity:1;transform:scaleY(1);} }
+@keyframes rowIn { from{opacity:0;transform:translateX(-4px);} to{opacity:1;transform:translateX(0);} }
+@keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
+.row-anim { animation: rowIn 0.2s ease forwards; }
+.fade-in { animation: fadeIn 0.3s ease forwards; }
 </style>
 </head>
-<body class="bg-bg text-txt font-body antialiased" style="overflow:hidden;height:100vh;display:flex;">
+<body>
 
-<!-- ═══════════════════════════════════════════
-     SIDEBAR
-════════════════════════════════════════════ -->
-<aside id="sidebar" class="w-64 flex-shrink-0 flex flex-col border-r border-amber/10 bg-bg h-screen overflow-y-auto z-50">
-  <!-- Brand -->
-  <div class="p-6 pb-4">
-    <div class="flex items-center gap-3 mb-8">
-      <div class="w-10 h-10 rounded-lg amber-grad flex items-center justify-center shadow-lg shadow-amber/20">
-        <span class="material-symbols-outlined fill-icon text-bg text-xl">shield_person</span>
-      </div>
-      <div>
-        <h1 class="text-amber-lt font-bold font-headline text-lg tracking-tight leading-none">FraudGuard</h1>
-        <p class="font-label text-[0.6rem] uppercase tracking-widest text-txt-dim mt-0.5">Forensic Suite V2.1</p>
-      </div>
-    </div>
-
-    <!-- New Analysis CTA -->
-    <button onclick="showPage('analysis'); document.getElementById('txInput').value=''; resetResults();"
-      class="w-full amber-grad text-bg py-3 px-4 rounded-lg font-bold font-label text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-amber/20 hover:brightness-110 active:scale-95 transition-all mb-6">
-      <span class="material-symbols-outlined fill-icon text-sm">add_circle</span>
-      New Analysis
-    </button>
-
-    <!-- Nav -->
-    <nav class="space-y-0.5">
-      <button onclick="showPage('analysis')" id="nav-analysis"
-        class="nav-link w-full flex items-center gap-3 px-4 py-3 rounded-lg font-label text-xs font-bold uppercase tracking-widest transition-all text-left">
-        <span class="material-symbols-outlined text-xl">analytics</span> Analysis
-      </button>
-      <button onclick="showPage('history')" id="nav-history"
-        class="nav-link w-full flex items-center gap-3 px-4 py-3 rounded-lg font-label text-xs font-bold uppercase tracking-widest transition-all text-left text-txt opacity-60 hover:opacity-100 hover:bg-bg2">
-        <span class="material-symbols-outlined text-xl">history</span> History
-      </button>
-      <button onclick="showPage('batch')" id="nav-batch"
-        class="nav-link w-full flex items-center gap-3 px-4 py-3 rounded-lg font-label text-xs font-bold uppercase tracking-widest transition-all text-left text-txt opacity-60 hover:opacity-100 hover:bg-bg2">
-        <span class="material-symbols-outlined text-xl">layers</span> Batch
-      </button>
-      <button onclick="showPage('reports')" id="nav-reports"
-        class="nav-link w-full flex items-center gap-3 px-4 py-3 rounded-lg font-label text-xs font-bold uppercase tracking-widest transition-all text-left text-txt opacity-60 hover:opacity-100 hover:bg-bg2">
-        <span class="material-symbols-outlined text-xl">assessment</span> Reports
-      </button>
-    </nav>
+<!-- ════════════════════════════════
+     TOPBAR
+════════════════════════════════ -->
+<div class="topbar">
+  <div class="brand">
+    <button class="mob-toggle" onclick="toggleSidebar()">☰</button>
+    <div class="brand-box">FG</div>
+    <div class="brand-name">FraudGuard</div>
+    <div class="brand-ver">v2.1 · FORENSIC SUITE</div>
   </div>
 
-  <!-- Bottom links -->
-  <div class="mt-auto p-4 border-t border-amber/10">
-    <div class="flex items-center gap-2 px-4 py-2">
-      <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-      <span class="font-label text-[0.65rem] uppercase tracking-widest text-txt-dim">Engine Active · XGBoost v2</span>
-    </div>
-    <div class="px-4 py-2 font-label text-[0.65rem] uppercase tracking-widest text-txt-muted">NeurIPS 2022 · 1M Transactions</div>
+  <div class="topbar-nav">
+    <button class="tnav active" id="tnav-analysis" onclick="showPage('analysis')">ANALYSIS</button>
+    <button class="tnav" id="tnav-history" onclick="showPage('history')">HISTORY</button>
+    <button class="tnav" id="tnav-batch" onclick="showPage('batch')">BATCH</button>
+    <button class="tnav" id="tnav-reports" onclick="showPage('reports')">REPORTS</button>
   </div>
-</aside>
 
-<!-- ═══════════════════════════════════════════
-     MAIN CONTENT
-════════════════════════════════════════════ -->
-<main class="flex-1 flex flex-col overflow-hidden">
-
-  <!-- Top Bar -->
-  <header class="flex-shrink-0 flex justify-between items-center px-8 py-4 border-b border-amber/10 bg-bg">
-    <div>
-      <h2 class="text-2xl font-black tracking-tighter text-txt font-headline" id="pageTitle">Fraud Analysis</h2>
-      <p class="text-txt-dim text-xs font-label uppercase tracking-widest mt-0.5" id="pageSubtitle">Real-time forensic inspection engine</p>
+  <div class="topbar-right">
+    <div class="status-live">
+      <div class="status-dot"></div>
+      <span>ENGINE ACTIVE</span>
     </div>
-    <div class="flex items-center gap-4">
-      <!-- Live stats bar -->
-      <div class="hidden md:flex items-center gap-4 text-xs font-label uppercase tracking-widest text-txt-dim">
-        <span>Analysed: <span class="text-amber-lt font-bold" id="hdrAnalysed">0</span></span>
-        <span class="text-txt-muted">·</span>
-        <span>Flagged: <span class="text-red font-bold" id="hdrFlagged">0</span></span>
-      </div>
-      <div class="flex items-center gap-2 px-3 py-1.5 bg-bg2 rounded-full border border-amber/10">
-        <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-        <span class="font-label text-[0.65rem] uppercase tracking-widest text-txt-dim">Engine Online</span>
-      </div>
-      <div id="clockDisplay" class="font-label text-xs text-txt-muted"></div>
+    <div class="topbar-stat">ANALYSED: <b id="hdrA">0</b></div>
+    <div class="topbar-stat">FLAGGED: <b id="hdrF" style="color:var(--red)">0</b></div>
+    <div id="topClock"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     LAYOUT
+════════════════════════════════ -->
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar" id="sidebar">
+    <div class="sb-section">
+      <div class="sb-header">ANALYSE</div>
+      <button class="sb-btn active" id="sb-transaction" onclick="setMode('transaction')">
+        ▸ TRANSACTION INTEL
+      </button>
+      <button class="sb-btn" id="sb-education" onclick="setMode('education')">
+        ▸ FRAUD EDUCATION
+      </button>
+      <button class="sb-btn" id="sb-prevention" onclick="setMode('prevention')">
+        ▸ PREVENTION ADVICE
+      </button>
+      <button class="sb-btn" id="sb-report" onclick="setMode('report')">
+        ▸ RISK REPORT
+      </button>
     </div>
-  </header>
-
-  <!-- Scrollable content area -->
-  <div class="flex-1 overflow-y-auto">
-
-    <!-- ══════════ PAGE: ANALYSIS ══════════ -->
-    <div class="page active p-8 lg:p-10" id="page-analysis">
-      <div class="grid grid-cols-12 gap-6 items-start max-w-7xl mx-auto">
-
-        <!-- LEFT: Input + Explanation -->
-        <section class="col-span-12 lg:col-span-7 space-y-6">
-
-          <!-- INPUT PANEL -->
-          <div class="bg-bg2 p-8 rounded-2xl border border-amber/5 shadow-2xl relative overflow-hidden group">
-            <div class="absolute top-0 right-0 w-40 h-40 bg-amber/5 blur-[80px] -mr-10 -mt-10 group-hover:bg-amber/10 transition-all duration-700 pointer-events-none"></div>
-            <div class="flex justify-between items-center mb-5">
-              <label class="font-label text-xs font-bold uppercase tracking-widest text-amber-lt">Transaction Intelligence</label>
-              <div class="flex gap-1">
-                <button onclick="loadSampleFraud()" class="px-3 py-1.5 text-[10px] font-label font-bold uppercase tracking-widest bg-red/10 text-red border border-red/20 rounded-lg hover:bg-red/20 transition-colors">
-                  Load Fraud Sample
-                </button>
-                <button onclick="loadSampleLegit()" class="px-3 py-1.5 text-[10px] font-label font-bold uppercase tracking-widest bg-green-500/10 text-green-400 border border-green-500/20 rounded-lg hover:bg-green-500/20 transition-colors">
-                  Load Safe Sample
-                </button>
-              </div>
-            </div>
-            <textarea id="txInput"
-              class="w-full h-52 bg-bg4/50 border-none rounded-xl p-5 text-txt placeholder:text-txt-muted font-body text-sm resize-none focus:ring-2 focus:ring-amber/20 transition-all outline-none"
-              placeholder="Describe the transaction in plain English — e.g. 'A ₹75,000 transfer at 2am from a new Android device with a Gmail address, user is renting, no home phone, foreign IP...'&#10;&#10;Or paste a JSON object with fields like housing_status, device_os, email_is_free, foreign_request, credit_risk_score, amount, hour..."></textarea>
-            <div class="mt-5 flex justify-between items-center">
-              <div class="flex items-center gap-4 text-xs text-txt-dim font-label">
-                <span class="flex items-center gap-1.5"><span class="material-symbols-outlined text-sm">model_training</span> XGBoost + Rule Engine</span>
-                <span class="flex items-center gap-1.5"><span class="material-symbols-outlined text-sm">schema</span> Hybrid Scoring</span>
-              </div>
-              <button id="analyseBtn" onclick="runAnalysis()"
-                class="amber-grad text-bg px-8 py-3 rounded-lg font-bold font-label text-xs uppercase tracking-widest flex items-center gap-2 shadow-lg shadow-amber/20 hover:brightness-110 active:scale-95 transition-all">
-                <span id="analyseBtnText">Run Analysis</span>
-                <span class="material-symbols-outlined fill-icon text-sm">bolt</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- EXPLANATION PANEL -->
-          <div class="bg-bg2 p-8 rounded-2xl border border-amber/5" id="explanationPanel">
-            <h3 class="font-label text-xs font-bold uppercase tracking-widest text-txt-dim mb-5">Forensic Explanation</h3>
-            <div id="explanationContent" class="space-y-4">
-              <p class="text-txt-dim text-sm leading-relaxed italic">Run an analysis to see the forensic explanation here.</p>
-            </div>
-          </div>
-
-          <!-- ACTIONS PANEL -->
-          <div id="actionsPanel" class="hidden">
-            <h3 class="font-label text-xs font-bold uppercase tracking-widest text-txt-dim mb-4">Recommended Actions</h3>
-            <div id="actionButtons" class="grid grid-cols-2 gap-3"></div>
-          </div>
-        </section>
-
-        <!-- RIGHT: Score + Signals -->
-        <section class="col-span-12 lg:col-span-5 space-y-6">
-
-          <!-- RISK SCORE CARD -->
-          <div class="glass p-8 rounded-2xl border border-amber/10 text-center relative overflow-hidden">
-            <div id="riskBgGlow" class="absolute inset-0 bg-gradient-to-br from-transparent to-transparent transition-all duration-700 pointer-events-none"></div>
-            <h3 class="font-label text-xs font-bold uppercase tracking-widest text-txt-dim mb-6 relative z-10">Hybrid Risk Score</h3>
-
-            <!-- SVG Gauge -->
-            <div class="relative w-44 h-44 mx-auto mb-5 z-10">
-              <svg class="w-full h-full -rotate-90" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="42" fill="none" stroke="#2a2a2a" stroke-width="8"/>
-                <circle id="gaugeCircle" cx="50" cy="50" r="42" fill="none"
-                  stroke="url(#riskGrad)" stroke-width="8"
-                  stroke-dasharray="264" stroke-dashoffset="264"
-                  stroke-linecap="round" class="gauge-circle"/>
-                <defs>
-                  <linearGradient id="riskGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stop-color="#e07b2a"/>
-                    <stop offset="100%" stop-color="#ffb4ab"/>
-                  </linearGradient>
-                  <linearGradient id="safeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stop-color="#22c55e"/>
-                    <stop offset="100%" stop-color="#4ade80"/>
-                  </linearGradient>
-                </defs>
-              </svg>
-              <div class="absolute inset-0 flex flex-col items-center justify-center">
-                <span id="scoreDisplay" class="text-5xl font-black tracking-tighter text-txt-dim">—</span>
-                <span id="scoreLevelDisplay" class="font-label text-[0.6rem] uppercase tracking-widest text-txt-dim mt-1">Awaiting Input</span>
-              </div>
-            </div>
-
-            <!-- Score legend -->
-            <div class="grid grid-cols-3 gap-1 px-2 py-2 bg-bg4/60 rounded-full text-[0.55rem] font-label uppercase tracking-widest relative z-10">
-              <div class="text-green-400">Safe 0–30</div>
-              <div class="text-amber-lt">Medium 31–59</div>
-              <div class="text-red font-bold" id="legendCritical">Critical 60+</div>
-            </div>
-
-            <!-- ML vs Hybrid breakdown -->
-            <div id="scoreBreakdown" class="hidden mt-5 grid grid-cols-2 gap-3 relative z-10">
-              <div class="bg-bg4/60 rounded-xl p-3">
-                <div class="font-label text-[0.6rem] uppercase tracking-widest text-txt-dim mb-1">ML Probability</div>
-                <div id="mlProbDisplay" class="text-2xl font-black font-label text-amber-lt">—</div>
-              </div>
-              <div class="bg-bg4/60 rounded-xl p-3">
-                <div class="font-label text-[0.6rem] uppercase tracking-widest text-txt-dim mb-1">Hybrid Score</div>
-                <div id="hybridDisplay" class="text-2xl font-black font-label text-amber-lt">—</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- SIGNALS LIST -->
-          <div class="bg-bg2 p-6 rounded-2xl border border-amber/5">
-            <h3 class="font-label text-xs font-bold uppercase tracking-widest text-txt-dim mb-5">Risk Signals Detected</h3>
-            <div id="signalsList" class="space-y-3">
-              <div class="flex items-center gap-3 p-4 bg-bg4/40 rounded-xl text-txt-dim text-sm italic">
-                <span class="material-symbols-outlined text-txt-muted">radar</span>
-                No signals yet — run an analysis
-              </div>
-            </div>
-          </div>
-
-          <!-- VERDICT CARD (shown after analysis) -->
-          <div id="verdictCard" class="hidden p-5 rounded-2xl border flex items-center gap-4">
-            <span id="verdictIcon" class="material-symbols-outlined fill-icon text-4xl"></span>
-            <div>
-              <div id="verdictLabel" class="text-xl font-black font-headline"></div>
-              <div id="verdictSub" class="text-xs text-txt-dim mt-0.5 font-label uppercase tracking-widest"></div>
-            </div>
-          </div>
-
-          <!-- LOADING STATE -->
-          <div id="analysisLoading" class="hidden p-5 bg-bg2 rounded-2xl border border-amber/5 flex items-center gap-4">
-            <div class="spinner flex-shrink-0"></div>
-            <div>
-              <div class="text-sm font-bold text-txt-dim">Running forensic analysis...</div>
-              <div class="text-xs text-txt-muted font-label uppercase tracking-widest mt-0.5">Querying ML + Rule engine</div>
-            </div>
-          </div>
-        </section>
-      </div>
+    <div class="sb-section">
+      <div class="sb-header">TOOLS</div>
+      <button class="sb-btn" onclick="document.getElementById('imgInput').click()">
+        ▸ UPLOAD SCREENSHOT
+      </button>
+      <button class="sb-btn" onclick="showPage('batch')">
+        ▸ BATCH ANALYSIS
+      </button>
+      <button class="sb-btn" onclick="showPage('history')">
+        ▸ SESSION HISTORY
+      </button>
+      <button class="sb-btn" onclick="showPage('reports')">
+        ▸ VIEW REPORTS
+      </button>
+      <input type="file" id="imgInput" accept="image/*" style="display:none" onchange="handleImage(event)"/>
+    </div>
+    <div class="sb-section">
+      <div class="sb-header">SESSION</div>
+      <button class="sb-btn" onclick="exportSession()">▸ EXPORT SESSION</button>
+      <button class="sb-btn" onclick="clearSession()" style="color:var(--red)">▸ CLEAR SESSION</button>
     </div>
 
-    <!-- ══════════ PAGE: HISTORY ══════════ -->
-    <div class="page p-8 lg:p-10" id="page-history">
-      <div class="max-w-6xl mx-auto">
-        <div class="mb-8">
-          <p class="text-txt-dim text-sm font-label">All transactions analysed this session.</p>
+    <!-- RESULT PANEL -->
+    <div class="result-panel">
+      <div class="result-header">LAST RESULT</div>
+      <div class="result-body">
+        <div id="resultCard" style="display:none">
+          <div class="result-score" id="rScore">0</div>
+          <div class="result-hybrid" id="rHybrid">HYBRID: <b>—</b></div>
+          <div class="result-label" id="rLabel">—</div>
+          <div class="result-bar-track"><div class="result-bar-fill" id="rBar" style="width:0%"></div></div>
+          <div class="result-flags" id="rFlags"></div>
         </div>
-
-        <!-- Filter bar -->
-        <div class="mb-6 p-1 bg-bg2 rounded-xl border border-amber/5 flex items-center gap-3">
-          <div class="relative flex-1">
-            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-txt-muted text-lg">search</span>
-            <input id="histSearch" onkeyup="filterHistory()" type="text" placeholder="Search transactions..."
-              class="w-full bg-transparent border-none focus:ring-0 pl-11 pr-4 py-3 text-sm text-txt placeholder:text-txt-muted outline-none"/>
-          </div>
-          <button onclick="exportHistory()" class="flex items-center gap-2 px-4 py-2 bg-bg4 hover:bg-bg5 text-txt-dim hover:text-txt rounded-lg text-xs font-label font-bold uppercase tracking-widest transition-colors">
-            <span class="material-symbols-outlined text-sm">download</span> Export
-          </button>
-          <button onclick="clearHistory()" class="flex items-center gap-2 px-4 py-2 bg-red/10 hover:bg-red/20 text-red rounded-lg text-xs font-label font-bold uppercase tracking-widest transition-colors border border-red/20">
-            <span class="material-symbols-outlined text-sm">delete</span> Clear
-          </button>
-        </div>
-
-        <!-- Table -->
-        <div class="bg-bg2 rounded-2xl overflow-hidden border border-amber/5 shadow-2xl">
-          <table class="w-full text-left border-collapse">
-            <thead>
-              <tr class="bg-bg4/50 border-b border-amber/5">
-                <th class="px-6 py-4 font-label text-[0.65rem] uppercase tracking-widest text-txt-dim">Time</th>
-                <th class="px-6 py-4 font-label text-[0.65rem] uppercase tracking-widest text-txt-dim">Description</th>
-                <th class="px-6 py-4 font-label text-[0.65rem] uppercase tracking-widest text-txt-dim">ML Prob</th>
-                <th class="px-6 py-4 font-label text-[0.65rem] uppercase tracking-widest text-txt-dim">Hybrid Score</th>
-                <th class="px-6 py-4 font-label text-[0.65rem] uppercase tracking-widest text-txt-dim">Verdict</th>
-                <th class="px-6 py-4 font-label text-[0.65rem] uppercase tracking-widest text-txt-dim">Action</th>
-              </tr>
-            </thead>
-            <tbody id="historyTableBody" class="divide-y divide-amber/5">
-              <tr>
-                <td colspan="6" class="px-6 py-12 text-center text-txt-muted text-sm font-label italic">
-                  No transactions analysed yet. Run an analysis first.
-                </td>
-              </tr>
-            </tbody>
-          </table>
-          <div class="p-4 bg-bg4/20 border-t border-amber/5 flex justify-between items-center">
-            <p class="font-label text-[0.65rem] uppercase tracking-widest text-txt-muted" id="historyCount">0 records</p>
-          </div>
-        </div>
+        <div class="result-empty" id="resultEmpty">NO ANALYSIS RUN.<br>ENTER TRANSACTION<br>DATA TO BEGIN.</div>
       </div>
     </div>
+  </div>
 
-    <!-- ══════════ PAGE: BATCH ══════════ -->
-    <div class="page p-8 lg:p-10" id="page-batch">
-      <div class="max-w-7xl mx-auto">
-        <!-- Summary cards -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
-          <div class="bg-bg2 p-6 rounded-2xl border-l-4 border-amber-lt">
-            <p class="font-label text-xs font-bold uppercase tracking-widest text-txt-dim mb-2">Total Processed</p>
-            <div class="flex items-baseline gap-3">
-              <span class="text-4xl font-black text-txt" id="batchTotal">0</span>
-              <span class="text-xs text-txt-dim font-label">this session</span>
-            </div>
-          </div>
-          <div class="bg-bg2 p-6 rounded-2xl border-l-4 border-red">
-            <p class="font-label text-xs font-bold uppercase tracking-widest text-txt-dim mb-2">High Risk Found</p>
-            <div class="flex items-baseline gap-3">
-              <span class="text-4xl font-black text-txt" id="batchFlagged">0</span>
-              <span class="text-xs text-red font-bold font-label" id="batchFlaggedPct"></span>
-            </div>
-          </div>
-          <div class="bg-bg2 p-6 rounded-2xl border-l-4 border-amber">
-            <p class="font-label text-xs font-bold uppercase tracking-widest text-txt-dim mb-2">Safe Transactions</p>
-            <div class="flex items-baseline gap-3">
-              <span class="text-4xl font-black text-txt" id="batchCleared">0</span>
-              <span class="text-xs text-txt-dim font-label">cleared</span>
-            </div>
-          </div>
+  <!-- MAIN PANEL -->
+  <div class="main-panel">
+
+    <!-- TICKER BAR -->
+    <div class="ticker">
+      <div class="tick-item"><span class="tick-label">MODEL</span><span class="tick-val neutral">XGBOOST-V2</span></div>
+      <span class="tick-sep">│</span>
+      <div class="tick-item"><span class="tick-label">DATASET</span><span class="tick-val neutral">NEURIPS-2022</span></div>
+      <span class="tick-sep">│</span>
+      <div class="tick-item"><span class="tick-label">TRANSACTIONS</span><span class="tick-val up">1,000,000</span></div>
+      <span class="tick-sep">│</span>
+      <div class="tick-item"><span class="tick-label">THRESHOLD</span><span class="tick-val neutral">10%</span></div>
+      <span class="tick-sep">│</span>
+      <div class="tick-item"><span class="tick-label">SCORING</span><span class="tick-val up">ML+RULES HYBRID</span></div>
+      <span class="tick-sep">│</span>
+      <div class="tick-item"><span class="tick-label">BATCH API</span><span class="tick-val up">ACTIVE · 500 MAX</span></div>
+      <span class="tick-sep">│</span>
+      <div class="tick-item"><span class="tick-label">KAGGLE SCORE</span><span class="tick-val up">0.8495 AUC</span></div>
+    </div>
+
+    <!-- ══ PAGE: ANALYSIS ══ -->
+    <div class="page active" id="page-analysis">
+      <div class="page-header">
+        <div>
+          <div class="page-title" id="pgTitle">TRANSACTION INTELLIGENCE</div>
+          <div class="page-sub" id="pgSub">Real-time ML + rule-based fraud scoring engine</div>
         </div>
+        <div class="page-actions">
+          <button class="hdr-btn" onclick="loadFraud()">LOAD FRAUD SAMPLE</button>
+          <button class="hdr-btn" onclick="loadLegit()">LOAD LEGIT SAMPLE</button>
+          <button class="hdr-btn" onclick="clearInput()">CLEAR INPUT</button>
+        </div>
+      </div>
+      <div class="page-scroll">
+        <div class="analysis-grid">
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <!-- Left: Processing area -->
-          <div class="lg:col-span-8 space-y-6">
+          <!-- LEFT COLUMN -->
+          <div style="display:flex;flex-direction:column;gap:12px;">
 
-            <!-- Active batch progress -->
-            <div id="batchProgressCard" class="hidden glass p-8 rounded-3xl border border-amber/5 relative overflow-hidden">
-              <div class="absolute top-0 right-0 p-5">
-                <span class="text-[10px] font-label font-bold text-amber-lt px-2 py-1 bg-amber/10 rounded uppercase">Processing</span>
+            <!-- INPUT PANEL -->
+            <div class="panel">
+              <div class="panel-head">
+                <div class="panel-title">INPUT // TRANSACTION DESCRIPTION</div>
+                <div class="panel-badge">PLAIN ENGLISH OR JSON</div>
               </div>
-              <div class="flex items-center gap-4 mb-6">
-                <div class="w-12 h-12 rounded-xl bg-bg5 flex items-center justify-center text-amber-lt">
-                  <span class="material-symbols-outlined fill-icon text-2xl">dataset</span>
+              <div class="panel-body">
+                <div class="sample-btns">
+                  <button class="sample-btn red" onclick="loadFraud()">⚠ FRAUD SAMPLE</button>
+                  <button class="sample-btn green" onclick="loadLegit()">✓ LEGIT SAMPLE</button>
                 </div>
-                <div>
-                  <h4 class="text-lg font-bold" id="batchFileName">Batch Job</h4>
-                  <p class="text-sm text-txt-dim" id="batchFileInfo">Preparing...</p>
-                </div>
-              </div>
-              <div class="space-y-3">
-                <div class="flex justify-between text-xs font-label font-bold uppercase tracking-widest">
-                  <span class="text-txt-dim">Progress</span>
-                  <span class="text-amber-lt" id="batchPct">0%</span>
-                </div>
-                <div class="h-2 w-full bg-bg5 rounded-full overflow-hidden">
-                  <div id="batchProgressBar" class="h-full amber-grad rounded-full transition-all duration-500" style="width:0%"></div>
-                </div>
-                <div class="flex justify-between text-xs text-txt-dim font-label font-bold uppercase">
-                  <span id="batchScanned">0 Scanned</span>
-                  <span id="batchFlaggedLive" class="text-red">0 Flagged</span>
-                </div>
-              </div>
-            </div>
+                <textarea id="txInput" class="input-area" rows="8"
+                  placeholder="Describe the transaction in plain English or paste JSON fields.&#10;&#10;Example: 'A ₹75,000 request at 2am from Android device via Gmail, user renting, no home phone, foreign IP, credit score 60...'&#10;&#10;JSON: {&quot;housing_status&quot;: 0, &quot;device_os&quot;: 3, &quot;email_is_free&quot;: 1, &quot;foreign_request&quot;: 1, &quot;credit_risk_score&quot;: 60, &quot;amount&quot;: 75000, &quot;hour&quot;: 2}"></textarea>
 
-            <!-- Results table -->
-            <div>
-              <div class="flex items-center justify-between mb-5">
-                <h4 class="text-xl font-bold">Batch Results</h4>
-                <div class="flex gap-2">
-                  <button onclick="batchExportCSV()" class="p-2 bg-bg2 rounded-lg hover:bg-bg4 text-txt-dim hover:text-txt transition-colors border border-amber/5">
-                    <span class="material-symbols-outlined text-sm">download</span>
+                <!-- IMAGE BAR -->
+                <div id="imgBar" style="display:none; margin-top:8px; padding:6px 10px; background:var(--orange-d); border:1px solid var(--orange); display:none; align-items:center; gap:10px;">
+                  <img id="previewImg" style="height:32px; border:1px solid var(--line2);" src="" alt=""/>
+                  <span style="font-size:10px;color:var(--orange);">IMAGE ATTACHED — VISION ANALYSIS READY</span>
+                  <button onclick="removeImage()" style="background:none;border:none;color:var(--txt3);cursor:pointer;font-family:var(--mono);font-size:10px;margin-left:auto;">✕ REMOVE</button>
+                </div>
+
+                <div class="input-footer">
+                  <div class="input-meta">
+                    <span>XGBoost + Rule Engine</span>
+                    <span>Hybrid Scoring</span>
+                    <span id="modeLabel">MODE: ANALYSE</span>
+                  </div>
+                  <button class="run-btn" id="runBtn" onclick="runAnalysis()">
+                    <span id="runBtnTxt">▶ RUN ANALYSIS</span>
                   </button>
                 </div>
               </div>
-              <div class="bg-bg2 rounded-2xl overflow-hidden border border-amber/5">
-                <div class="overflow-x-auto">
-                  <table class="w-full text-left border-collapse min-w-[700px]">
-                    <thead>
-                      <tr class="border-b border-amber/5">
-                        <th class="p-4 font-label text-[0.65rem] font-bold tracking-widest text-txt-dim uppercase">ID</th>
-                        <th class="p-4 font-label text-[0.65rem] font-bold tracking-widest text-txt-dim uppercase">Verdict</th>
-                        <th class="p-4 font-label text-[0.65rem] font-bold tracking-widest text-txt-dim uppercase">ML %</th>
-                        <th class="p-4 font-label text-[0.65rem] font-bold tracking-widest text-txt-dim uppercase">Hybrid</th>
-                        <th class="p-4 font-label text-[0.65rem] font-bold tracking-widest text-txt-dim uppercase">Risk Level</th>
-                        <th class="p-4 font-label text-[0.65rem] font-bold tracking-widest text-txt-dim uppercase">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody id="batchResultsBody" class="divide-y divide-amber/5">
-                      <tr><td colspan="6" class="p-8 text-center text-txt-muted text-sm italic font-label">No batch results yet. Upload a CSV or add transactions manually.</td></tr>
-                    </tbody>
-                  </table>
+            </div>
+
+            <!-- LOADING -->
+            <div class="panel" id="loadingPanel" style="display:none">
+              <div class="loading-wrap">
+                <div class="ld-dots"><div class="ld-dot"></div><div class="ld-dot"></div><div class="ld-dot"></div></div>
+                <span>RUNNING FORENSIC ANALYSIS — ML + RULE ENGINE QUERIED...</span>
+              </div>
+            </div>
+
+            <!-- VERDICT -->
+            <div class="panel" id="verdictPanel" style="display:none">
+              <div class="panel-head"><div class="panel-title">VERDICT</div></div>
+              <div id="verdictBanner"></div>
+            </div>
+
+            <!-- EXPLANATION -->
+            <div class="panel" id="explanationPanel">
+              <div class="panel-head">
+                <div class="panel-title">FORENSIC EXPLANATION</div>
+                <div class="panel-badge" id="explBadge">AWAITING ANALYSIS</div>
+              </div>
+              <div id="explanationBody">
+                <div class="explanation-text" style="color:var(--txt3);">Run an analysis to see the forensic breakdown here. FraudGuard will explain what signals the model detected and why this transaction was flagged or cleared.</div>
+              </div>
+            </div>
+
+            <!-- ACTIONS -->
+            <div class="panel" id="actionsPanel" style="display:none">
+              <div class="panel-head"><div class="panel-title">RECOMMENDED ACTIONS</div></div>
+              <div id="actionsBody" class="action-grid"></div>
+            </div>
+          </div>
+
+          <!-- RIGHT COLUMN -->
+          <div style="display:flex;flex-direction:column;gap:12px;">
+
+            <!-- GAUGE -->
+            <div class="panel">
+              <div class="panel-head"><div class="panel-title">HYBRID RISK SCORE</div></div>
+              <div class="gauge-wrap">
+                <svg class="gauge-svg" viewBox="0 0 140 140">
+                  <circle cx="70" cy="70" r="58" fill="none" stroke="#222" stroke-width="10"/>
+                  <circle id="gaugeArc" cx="70" cy="70" r="58" fill="none"
+                    stroke="var(--orange)" stroke-width="10"
+                    stroke-dasharray="364" stroke-dashoffset="364"
+                    stroke-linecap="butt"
+                    transform="rotate(-90 70 70)"
+                    style="transition: stroke-dashoffset 1s cubic-bezier(0.4,0,0.2,1);"/>
+                  <text x="70" y="64" text-anchor="middle" font-family="IBM Plex Mono" font-size="32" font-weight="700" fill="#888" id="gaugeScoreText">—</text>
+                  <text x="70" y="82" text-anchor="middle" font-family="IBM Plex Mono" font-size="9" fill="#444" letter-spacing="2" id="gaugeLevelText">AWAITING</text>
+                </svg>
+                <div class="gauge-legend">
+                  <div class="gauge-legend-item" style="color:var(--green)">SAFE 0-30</div>
+                  <div class="gauge-legend-item" style="color:var(--yellow)">MED 31-59</div>
+                  <div class="gauge-legend-item" style="color:var(--red)">CRIT 60+</div>
                 </div>
+                <div class="score-breakdown" id="scoreBreakdown" style="display:none">
+                  <div class="score-breakdown-item">
+                    <div class="sbi-label">ML PROBABILITY</div>
+                    <div class="sbi-val" id="sbML" style="color:var(--orange)">—</div>
+                  </div>
+                  <div class="score-breakdown-item">
+                    <div class="sbi-label">HYBRID SCORE</div>
+                    <div class="sbi-val" id="sbHybrid" style="color:var(--orange)">—</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- SIGNALS -->
+            <div class="panel">
+              <div class="panel-head">
+                <div class="panel-title">RISK SIGNALS</div>
+                <div class="panel-badge" id="signalsBadge">NONE DETECTED</div>
+              </div>
+              <div id="signalsList">
+                <div class="signal-item">
+                  <div class="signal-bar" style="background:var(--txt3)"></div>
+                  <div class="signal-text" style="color:var(--txt3);font-style:italic;">NO SIGNALS — RUN ANALYSIS</div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PAGE: HISTORY ══ -->
+    <div class="page" id="page-history">
+      <div class="page-header">
+        <div>
+          <div class="page-title">SESSION HISTORY</div>
+          <div class="page-sub">All transactions analysed this session</div>
+        </div>
+        <div class="page-actions">
+          <button class="hdr-btn" onclick="exportHistory()">EXPORT CSV</button>
+          <button class="hdr-btn" onclick="clearHistory()" style="color:var(--red)">CLEAR HISTORY</button>
+        </div>
+      </div>
+      <div class="page-scroll">
+        <div class="filter-bar">
+          <span style="padding:0 10px;font-size:11px;color:var(--txt3)">▸</span>
+          <input id="histSearch" class="filter-input" type="text" placeholder="SEARCH TRANSACTIONS..." onkeyup="renderHistory()"/>
+          <div class="filter-sep"></div>
+          <button class="filter-btn" onclick="renderHistory()">FILTER</button>
+          <div class="filter-sep"></div>
+          <span id="histCount" style="padding:0 10px;font-size:10px;color:var(--txt3);white-space:nowrap">0 RECORDS</span>
+        </div>
+        <table class="data-table" id="histTable">
+          <thead>
+            <tr>
+              <th>TIME</th>
+              <th>DESCRIPTION</th>
+              <th>ML PROB</th>
+              <th>HYBRID</th>
+              <th>VERDICT</th>
+              <th>RISK LEVEL</th>
+            </tr>
+          </thead>
+          <tbody id="histBody">
+            <tr><td colspan="6" style="text-align:center;padding:24px;color:var(--txt3);font-style:italic;">NO RECORDS YET — RUN AN ANALYSIS FIRST</td></tr>
+          </tbody>
+        </table>
+        <div class="table-footer" id="histFooter">SHOWING 0 RECORDS</div>
+      </div>
+    </div>
+
+    <!-- ══ PAGE: BATCH ══ -->
+    <div class="page" id="page-batch">
+      <div class="page-header">
+        <div>
+          <div class="page-title">BATCH ANALYSIS ENGINE</div>
+          <div class="page-sub">High-volume transaction scoring · POST /analyze/batch · Max 500 transactions</div>
+        </div>
+        <div class="page-actions">
+          <button class="hdr-btn" onclick="batchExportCSV()">EXPORT RESULTS</button>
+        </div>
+      </div>
+      <div class="page-scroll">
+        <div class="batch-summary">
+          <div class="bs-card orange"><div class="bs-label">TOTAL PROCESSED</div><div class="bs-val orange" id="bsTotal">0</div><div class="bs-sub">THIS SESSION</div></div>
+          <div class="bs-card red"><div class="bs-label">FLAGGED HIGH RISK</div><div class="bs-val red" id="bsFlagged">0</div><div class="bs-sub" id="bsFlaggedPct">— % OF TOTAL</div></div>
+          <div class="bs-card green"><div class="bs-label">CLEARED SAFE</div><div class="bs-val green" id="bsCleared">0</div><div class="bs-sub">LEGITIMATE</div></div>
+        </div>
+
+        <!-- PROGRESS -->
+        <div class="panel" id="batchProgressCard" style="display:none; margin-bottom:12px;">
+          <div class="panel-head">
+            <div class="panel-title" id="batchJobName">BATCH JOB</div>
+            <div class="panel-badge" id="batchJobInfo">PROCESSING</div>
+          </div>
+          <div class="panel-body">
+            <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--txt3);margin-bottom:4px;">
+              <span id="bProgressLabel">ANALYSING...</span>
+              <span id="bProgressPct" style="color:var(--orange)">0%</span>
+            </div>
+            <div class="progress-bar-track"><div class="progress-bar-fill" id="bProgressBar"></div></div>
+            <div style="display:flex;justify-content:space-between;font-size:10px;margin-top:4px;">
+              <span id="bScanned" style="color:var(--txt3)">0 SCANNED</span>
+              <span id="bFlaggedLive" style="color:var(--red)">0 FLAGGED</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="batch-grid">
+          <!-- LEFT: RESULTS TABLE -->
+          <div>
+            <div class="panel">
+              <div class="panel-head">
+                <div class="panel-title">RESULTS</div>
+                <div class="panel-badge" id="bResultsBadge">NO RESULTS YET</div>
+              </div>
+              <div style="overflow-x:auto;">
+                <table class="data-table" style="min-width:600px;">
+                  <thead>
+                    <tr>
+                      <th>ID</th><th>VERDICT</th><th>ML%</th><th>HYBRID</th><th>RISK</th><th>ACTIONS</th>
+                    </tr>
+                  </thead>
+                  <tbody id="bResultsBody">
+                    <tr><td colspan="6" style="text-align:center;padding:20px;color:var(--txt3);font-style:italic;">UPLOAD CSV OR ADD TRANSACTIONS TO BEGIN</td></tr>
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
 
-          <!-- Right: Upload + Config -->
-          <div class="lg:col-span-4 space-y-5">
-            <!-- File Upload -->
-            <div id="batchDropZone"
-              class="bg-bg3 p-1 rounded-3xl border-2 border-dashed border-amber/20 group hover:border-amber/50 transition-colors cursor-pointer"
-              onclick="document.getElementById('batchFileInput').click()"
-              ondragover="event.preventDefault();this.classList.add('border-amber/60')"
-              ondragleave="this.classList.remove('border-amber/60')"
-              ondrop="handleBatchDrop(event)">
-              <div class="bg-bg2 rounded-[1.4rem] p-8 flex flex-col items-center text-center group-hover:bg-bg4 transition-colors">
-                <div class="w-16 h-16 rounded-full bg-bg5 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
-                  <span class="material-symbols-outlined fill-icon text-3xl text-amber-lt">cloud_upload</span>
+          <!-- RIGHT: INPUT -->
+          <div style="display:flex;flex-direction:column;gap:10px;">
+
+            <!-- DROP ZONE -->
+            <div class="panel">
+              <div class="panel-head"><div class="panel-title">UPLOAD CSV FILE</div></div>
+              <div class="panel-body">
+                <div class="drop-zone" id="dropZone"
+                  onclick="document.getElementById('bCsvInput').click()"
+                  ondragover="event.preventDefault();document.getElementById('dropZone').classList.add('drag')"
+                  ondragleave="document.getElementById('dropZone').classList.remove('drag')"
+                  ondrop="bDropFile(event)">
+                  <div class="drop-icon">▲</div>
+                  <div>DRAG & DROP CSV</div>
+                  <div style="font-size:10px;margin-top:4px;">OR CLICK TO BROWSE · MAX 500 ROWS</div>
                 </div>
-                <h5 class="text-base font-bold mb-2">Upload CSV Batch</h5>
-                <p class="text-xs text-txt-dim mb-5 max-w-[180px] leading-relaxed">Drag & drop a CSV file or click to browse</p>
-                <button onclick="event.stopPropagation();document.getElementById('batchFileInput').click()"
-                  class="w-full py-3 rounded-xl amber-grad text-bg font-bold text-xs font-label uppercase tracking-widest shadow-lg shadow-amber/20 hover:brightness-110">
-                  Select CSV File
-                </button>
-                <p class="mt-3 text-[10px] font-label uppercase tracking-widest text-txt-muted">Max 500 rows</p>
+                <input type="file" id="bCsvInput" accept=".csv" style="display:none" onchange="bLoadCSV(event)"/>
+                <div id="bCsvStatus" style="display:none;margin-top:8px;padding:6px 8px;background:var(--green-d);border:1px solid var(--green);font-size:10px;color:var(--green);">
+                  ✓ CSV LOADED: <span id="bCsvInfo"></span>
+                </div>
               </div>
             </div>
-            <input type="file" id="batchFileInput" accept=".csv" class="hidden" onchange="handleBatchFile(event)"/>
 
-            <!-- Manual Add Form -->
-            <div class="bg-bg2 p-5 rounded-2xl border border-amber/5 space-y-4">
-              <h5 class="font-label text-xs font-bold uppercase tracking-widest text-txt-dim">Add Transaction Manually</h5>
-              <div class="grid grid-cols-2 gap-3">
-                <div>
-                  <label class="font-label text-[10px] uppercase tracking-wider text-txt-muted block mb-1">Amount (₹)</label>
-                  <input id="mAmount" type="number" placeholder="5000" class="w-full bg-bg4 border border-amber/10 rounded-lg px-3 py-2 text-xs text-txt focus:ring-1 focus:ring-amber/30 outline-none"/>
+            <!-- MANUAL FORM -->
+            <div class="panel">
+              <div class="panel-head">
+                <div class="panel-title">ADD MANUALLY</div>
+                <div class="panel-badge" id="bQueueCount">QUEUE: 0</div>
+              </div>
+              <div class="panel-body">
+                <div class="form-grid">
+                  <div class="form-field">
+                    <div class="form-label">AMOUNT (₹)</div>
+                    <input id="bAmount" class="form-input" type="number" placeholder="5000"/>
+                  </div>
+                  <div class="form-field">
+                    <div class="form-label">HOUR (0-23)</div>
+                    <input id="bHour" class="form-input" type="number" placeholder="14" min="0" max="23"/>
+                  </div>
+                  <div class="form-field">
+                    <div class="form-label">FOREIGN REQUEST</div>
+                    <select id="bForeign" class="form-select">
+                      <option value="0">NO (LOCAL)</option>
+                      <option value="1">YES (FOREIGN)</option>
+                    </select>
+                  </div>
+                  <div class="form-field">
+                    <div class="form-label">EMAIL TYPE</div>
+                    <select id="bEmail" class="form-select">
+                      <option value="0">WORK / CORPORATE</option>
+                      <option value="1">FREE (GMAIL/YAHOO)</option>
+                    </select>
+                  </div>
+                  <div class="form-field">
+                    <div class="form-label">DEVICE OS</div>
+                    <select id="bDevice" class="form-select">
+                      <option value="1">MAC</option>
+                      <option value="0">WINDOWS</option>
+                      <option value="3">ANDROID</option>
+                      <option value="4">IOS</option>
+                      <option value="2">LINUX</option>
+                    </select>
+                  </div>
+                  <div class="form-field">
+                    <div class="form-label">CREDIT SCORE</div>
+                    <input id="bCredit" class="form-input" type="number" placeholder="150"/>
+                  </div>
                 </div>
-                <div>
-                  <label class="font-label text-[10px] uppercase tracking-wider text-txt-muted block mb-1">Hour (0-23)</label>
-                  <input id="mHour" type="number" placeholder="14" min="0" max="23" class="w-full bg-bg4 border border-amber/10 rounded-lg px-3 py-2 text-xs text-txt focus:ring-1 focus:ring-amber/30 outline-none"/>
-                </div>
-                <div>
-                  <label class="font-label text-[10px] uppercase tracking-wider text-txt-muted block mb-1">Foreign Request</label>
-                  <select id="mForeign" class="w-full bg-bg4 border border-amber/10 rounded-lg px-3 py-2 text-xs text-txt focus:ring-1 focus:ring-amber/30 outline-none">
-                    <option value="0">No (Local)</option>
-                    <option value="1">Yes (Foreign)</option>
-                  </select>
-                </div>
-                <div>
-                  <label class="font-label text-[10px] uppercase tracking-wider text-txt-muted block mb-1">Email Type</label>
-                  <select id="mEmail" class="w-full bg-bg4 border border-amber/10 rounded-lg px-3 py-2 text-xs text-txt focus:ring-1 focus:ring-amber/30 outline-none">
-                    <option value="0">Work / Corporate</option>
-                    <option value="1">Free (Gmail/Yahoo)</option>
-                  </select>
-                </div>
-                <div>
-                  <label class="font-label text-[10px] uppercase tracking-wider text-txt-muted block mb-1">Device OS</label>
-                  <select id="mDevice" class="w-full bg-bg4 border border-amber/10 rounded-lg px-3 py-2 text-xs text-txt focus:ring-1 focus:ring-amber/30 outline-none">
-                    <option value="1">Mac</option>
-                    <option value="0">Windows</option>
-                    <option value="3">Android</option>
-                    <option value="4">iOS</option>
-                    <option value="2">Linux</option>
-                  </select>
-                </div>
-                <div>
-                  <label class="font-label text-[10px] uppercase tracking-wider text-txt-muted block mb-1">Credit Score</label>
-                  <input id="mCredit" type="number" placeholder="150" class="w-full bg-bg4 border border-amber/10 rounded-lg px-3 py-2 text-xs text-txt focus:ring-1 focus:ring-amber/30 outline-none"/>
+                <button class="add-btn" onclick="bAddManual()">+ ADD TO QUEUE</button>
+
+                <div class="csv-format">
+                  <div class="csv-fmt-label">CSV COLUMN FORMAT</div>
+                  <div class="csv-fmt-code">id, amount, hour, foreign_request,<br/>email_is_free, device_os,<br/>credit_risk_score, housing_status</div>
                 </div>
               </div>
-              <button onclick="addManualToBatch()" class="w-full py-2.5 rounded-lg border border-amber/30 text-amber-lt text-xs font-label font-bold uppercase tracking-widest hover:bg-amber/10 transition-colors flex items-center justify-center gap-2">
-                <span class="material-symbols-outlined text-sm">add</span> Add to Queue
-              </button>
-              <div id="manualQueueInfo" class="text-[10px] font-label uppercase tracking-widest text-txt-muted text-center">Queue: 0 transactions</div>
             </div>
 
-            <!-- Run batch -->
-            <button id="runBatchBtn" onclick="runBatch()" disabled
-              class="w-full py-4 rounded-xl amber-grad text-bg font-bold font-label text-sm uppercase tracking-widest flex items-center justify-center gap-2 shadow-xl shadow-amber/20 hover:brightness-110 active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none">
-              <span class="material-symbols-outlined fill-icon">rocket_launch</span>
-              <span id="runBatchBtnText">Run Batch Analysis</span>
+            <button class="run-batch-btn" id="runBatchBtn" onclick="runBatch()" disabled>
+              ▶ RUN BATCH ANALYSIS
             </button>
+          </div>
+        </div>
+      </div>
+    </div>
 
-            <!-- CSV format hint -->
-            <div class="bg-bg2 p-4 rounded-xl border border-amber/5">
-              <p class="font-label text-[10px] uppercase tracking-widest text-txt-muted mb-2">CSV Format</p>
-              <code class="text-[10px] text-amber-lt/80 font-mono leading-relaxed block">id,amount,hour,foreign_request,<br/>email_is_free,device_os,<br/>credit_risk_score,housing_status</code>
+    <!-- ══ PAGE: REPORTS ══ -->
+    <div class="page" id="page-reports">
+      <div class="page-header">
+        <div>
+          <div class="page-title">SESSION REPORTS</div>
+          <div class="page-sub">Performance metrics · signal breakdown · fraud distribution</div>
+        </div>
+        <div class="page-actions">
+          <button class="hdr-btn" onclick="exportReport()">EXPORT JSON</button>
+        </div>
+      </div>
+      <div class="page-scroll">
+        <div class="reports-grid">
+          <div class="rpt-metric" style="border-left-color:var(--orange)">
+            <div class="rpt-metric-label">TOTAL ANALYSED</div>
+            <div class="rpt-metric-val" id="rptTotal" style="color:var(--orange)">0</div>
+            <div class="rpt-metric-bar"><div class="rpt-metric-bar-fill" id="rptTotalBar" style="background:var(--orange)"></div></div>
+            <div class="rpt-metric-sub">THIS SESSION</div>
+          </div>
+          <div class="rpt-metric" style="border-left-color:var(--red)">
+            <div class="rpt-metric-label">FLAGGED FRAUD</div>
+            <div class="rpt-metric-val" id="rptFlagged" style="color:var(--red)">0</div>
+            <div class="rpt-metric-bar"><div class="rpt-metric-bar-fill" id="rptFlaggedBar" style="background:var(--red)"></div></div>
+            <div class="rpt-metric-sub" id="rptFlaggedPct">0% OF TOTAL</div>
+          </div>
+          <div class="rpt-metric" style="border-left-color:var(--yellow)">
+            <div class="rpt-metric-label">AVG HYBRID SCORE</div>
+            <div class="rpt-metric-val" id="rptAvg" style="color:var(--yellow)">—</div>
+            <div class="rpt-metric-bar"><div class="rpt-metric-bar-fill" id="rptAvgBar" style="background:var(--yellow)"></div></div>
+            <div class="rpt-metric-sub">THRESHOLD: 60</div>
+          </div>
+          <div class="rpt-metric" style="border-left-color:var(--green)">
+            <div class="rpt-metric-label">CLEARED SAFE</div>
+            <div class="rpt-metric-val" id="rptCleared" style="color:var(--green)">0</div>
+            <div class="rpt-metric-bar"><div class="rpt-metric-bar-fill" id="rptClearedBar" style="background:var(--green)"></div></div>
+            <div class="rpt-metric-sub">LEGITIMATE</div>
+          </div>
+        </div>
+
+        <div class="reports-bottom">
+          <!-- DISTRIBUTION -->
+          <div class="panel">
+            <div class="panel-head"><div class="panel-title">RISK DISTRIBUTION</div></div>
+            <div class="panel-body">
+              <div class="dist-row">
+                <div class="dist-label" style="color:var(--red)">CRITICAL</div>
+                <div class="dist-track"><div class="dist-fill" id="dCritical" style="background:var(--red)"></div></div>
+                <div class="dist-count" id="dcCritical" style="color:var(--red)">0</div>
+              </div>
+              <div class="dist-row">
+                <div class="dist-label" style="color:var(--yellow)">HIGH</div>
+                <div class="dist-track"><div class="dist-fill" id="dHigh" style="background:var(--yellow)"></div></div>
+                <div class="dist-count" id="dcHigh" style="color:var(--yellow)">0</div>
+              </div>
+              <div class="dist-row">
+                <div class="dist-label" style="color:var(--cyan)">MEDIUM</div>
+                <div class="dist-track"><div class="dist-fill" id="dMedium" style="background:var(--cyan)"></div></div>
+                <div class="dist-count" id="dcMedium" style="color:var(--cyan)">0</div>
+              </div>
+              <div class="dist-row">
+                <div class="dist-label" style="color:var(--green)">LOW</div>
+                <div class="dist-track"><div class="dist-fill" id="dLow" style="background:var(--green)"></div></div>
+                <div class="dist-count" id="dcLow" style="color:var(--green)">0</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TOP SIGNALS -->
+          <div class="panel">
+            <div class="panel-head"><div class="panel-title">TOP RISK SIGNALS</div></div>
+            <div class="panel-body">
+              <div class="signal-freq" id="topSignals">
+                <div style="color:var(--txt3);font-size:10px;font-style:italic;">NO SIGNALS RECORDED YET</div>
+              </div>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- ══════════ PAGE: REPORTS ══════════ -->
-    <div class="page p-8 lg:p-10" id="page-reports">
-      <div class="max-w-6xl mx-auto">
-        <div class="flex flex-col md:flex-row md:items-end justify-between gap-5 mb-10">
-          <p class="text-txt-dim text-sm">Session performance metrics and fraud signal breakdown.</p>
-          <button onclick="exportReportJSON()" class="flex items-center gap-2 px-5 py-2.5 rounded-lg amber-grad text-bg font-bold font-label text-xs uppercase tracking-widest shadow-lg shadow-amber/20 active:scale-95 transition-all">
-            <span class="material-symbols-outlined fill-icon text-sm">download</span> Export JSON Report
-          </button>
-        </div>
-
-        <!-- Metric cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-10">
-          <div class="bg-bg2 p-6 rounded-xl border-l-4 border-amber-lt">
-            <div class="font-label text-[0.6rem] uppercase tracking-widest text-txt-dim mb-3">Total Analysed</div>
-            <div class="text-3xl font-black text-txt" id="rptTotal">0</div>
-            <div class="h-1 w-full bg-bg5 rounded-full mt-4"><div id="rptTotalBar" class="h-full bg-amber-lt rounded-full" style="width:0%"></div></div>
-            <p class="text-[10px] text-txt-muted mt-2 font-label uppercase tracking-tighter">This session</p>
-          </div>
-          <div class="bg-bg2 p-6 rounded-xl border-l-4 border-red">
-            <div class="font-label text-[0.6rem] uppercase tracking-widest text-txt-dim mb-3">Flagged as Fraud</div>
-            <div class="text-3xl font-black text-txt" id="rptFlagged">0</div>
-            <div class="h-1 w-full bg-bg5 rounded-full mt-4"><div id="rptFlaggedBar" class="h-full bg-red rounded-full" style="width:0%"></div></div>
-            <p class="text-[10px] text-txt-muted mt-2 font-label uppercase tracking-tighter" id="rptFlaggedPct">0% of total</p>
-          </div>
-          <div class="bg-bg2 p-6 rounded-xl border-l-4 border-amber">
-            <div class="font-label text-[0.6rem] uppercase tracking-widest text-txt-dim mb-3">Avg Hybrid Score</div>
-            <div class="text-3xl font-black text-txt" id="rptAvgScore">—</div>
-            <div class="h-1 w-full bg-bg5 rounded-full mt-4"><div id="rptAvgBar" class="h-full bg-amber rounded-full" style="width:0%"></div></div>
-            <p class="text-[10px] text-txt-muted mt-2 font-label uppercase tracking-tighter">Risk threshold: 60</p>
-          </div>
-          <div class="bg-bg2 p-6 rounded-xl border-l-4 border-green-500">
-            <div class="font-label text-[0.6rem] uppercase tracking-widest text-txt-dim mb-3">Cleared Safe</div>
-            <div class="text-3xl font-black text-txt" id="rptCleared">0</div>
-            <div class="h-1 w-full bg-bg5 rounded-full mt-4"><div id="rptClearedBar" class="h-full bg-green-500 rounded-full" style="width:0%"></div></div>
-            <p class="text-[10px] text-txt-muted mt-2 font-label uppercase tracking-tighter">Legitimate transactions</p>
-          </div>
-        </div>
-
-        <!-- Risk distribution + recent signals -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <!-- Risk level breakdown -->
-          <div class="bg-bg2 p-8 rounded-2xl border border-amber/5">
-            <h3 class="font-bold text-lg mb-6">Risk Level Distribution</h3>
-            <div class="space-y-5" id="rptRiskBars">
-              <div class="flex items-center gap-4">
-                <div class="w-16 text-[10px] font-label font-bold uppercase tracking-widest text-red">Critical</div>
-                <div class="flex-1 h-2 bg-bg5 rounded-full overflow-hidden"><div id="barCritical" class="h-full bg-red rounded-full transition-all duration-700" style="width:0%"></div></div>
-                <div class="w-8 text-right text-xs font-bold font-label text-red" id="cntCritical">0</div>
-              </div>
-              <div class="flex items-center gap-4">
-                <div class="w-16 text-[10px] font-label font-bold uppercase tracking-widest text-amber-lt">High</div>
-                <div class="flex-1 h-2 bg-bg5 rounded-full overflow-hidden"><div id="barHigh" class="h-full bg-amber-lt rounded-full transition-all duration-700" style="width:0%"></div></div>
-                <div class="w-8 text-right text-xs font-bold font-label text-amber-lt" id="cntHigh">0</div>
-              </div>
-              <div class="flex items-center gap-4">
-                <div class="w-16 text-[10px] font-label font-bold uppercase tracking-widest text-blue-400">Medium</div>
-                <div class="flex-1 h-2 bg-bg5 rounded-full overflow-hidden"><div id="barMedium" class="h-full bg-blue-400 rounded-full transition-all duration-700" style="width:0%"></div></div>
-                <div class="w-8 text-right text-xs font-bold font-label text-blue-400" id="cntMedium">0</div>
-              </div>
-              <div class="flex items-center gap-4">
-                <div class="w-16 text-[10px] font-label font-bold uppercase tracking-widest text-green-400">Low</div>
-                <div class="flex-1 h-2 bg-bg5 rounded-full overflow-hidden"><div id="barLow" class="h-full bg-green-400 rounded-full transition-all duration-700" style="width:0%"></div></div>
-                <div class="w-8 text-right text-xs font-bold font-label text-green-400" id="cntLow">0</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Top signals seen -->
-          <div class="bg-bg2 p-8 rounded-2xl border border-amber/5">
-            <h3 class="font-bold text-lg mb-6">Top Risk Signals Seen</h3>
-            <div id="topSignalsList" class="space-y-3">
-              <p class="text-txt-muted text-sm italic font-label">No signals recorded yet.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-  </div><!-- end scrollable -->
-</main>
-
-<!-- ═══════════════════════════════════════════
-     FAB
-════════════════════════════════════════════ -->
-<button onclick="showPage('analysis'); document.getElementById('txInput').focus();"
-  class="fixed bottom-8 right-8 w-14 h-14 rounded-full amber-grad text-bg flex items-center justify-center shadow-[0_16px_32px_-8px_rgba(224,123,42,0.5)] hover:scale-110 active:scale-90 transition-all z-50">
-  <span class="material-symbols-outlined fill-icon text-2xl">bolt</span>
-</button>
+  </div><!-- end main-panel -->
+</div><!-- end layout -->
 
 <script>
-// ─── STATE ───────────────────────────────────────────────────────────────────
-let sessionHistory = [];
-let batchQueue     = [];
-let lastResult     = null;
-let batchResults   = [];
-let stats = { analysed:0, flagged:0, cleared:0, scores:[], critical:0, high:0, medium:0, low:0 };
-let allSignals = {};
+// ═══════════════ STATE ═══════════════
+let curMode = 'transaction';
+let curImg  = null;
+let history = [];
+let batchQ  = []; batchCsvQ = [];
+let batchResults = [];
+let stats = { a:0, f:0, c:0, scores:[], crit:0, high:0, med:0, low:0 };
+let sigMap = {};
+let lastData = null;
 
-// ─── NAVIGATION ──────────────────────────────────────────────────────────────
-const pageTitles = {
-  analysis: ['Fraud Analysis', 'Real-time forensic inspection engine'],
-  history:  ['Session History', 'All transactions analysed this session'],
-  batch:    ['Batch Analysis', 'High-volume forensic scan engine'],
-  reports:  ['Risk Reports', 'Session performance & signal breakdown']
-};
+// ═══════════════ CLOCK ═══════════════
+setInterval(() => { document.getElementById('topClock').textContent = new Date().toTimeString().split(' ')[0]; }, 1000);
+document.getElementById('topClock').textContent = new Date().toTimeString().split(' ')[0];
 
+// ═══════════════ NAVIGATION ═══════════════
 function showPage(name) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tnav').forEach(t => t.classList.remove('active'));
   document.getElementById('page-' + name).classList.add('active');
-  document.querySelectorAll('[id^="nav-"]').forEach(n => {
-    n.className = 'nav-link w-full flex items-center gap-3 px-4 py-3 rounded-lg font-label text-xs font-bold uppercase tracking-widest transition-all text-left text-txt opacity-60 hover:opacity-100 hover:bg-bg2';
-  });
-  const activeNav = document.getElementById('nav-' + name);
-  activeNav.className = 'nav-link w-full flex items-center gap-3 px-4 py-3 rounded-lg font-label text-xs font-bold uppercase tracking-widest transition-all text-left bg-amber text-bg';
-  document.getElementById('pageTitle').textContent = pageTitles[name][0];
-  document.getElementById('pageSubtitle').textContent = pageTitles[name][1];
+  document.getElementById('tnav-' + name).classList.add('active');
   if (name === 'history') renderHistory();
   if (name === 'reports') renderReports();
 }
 
-// ─── CLOCK ───────────────────────────────────────────────────────────────────
-function updateClock() {
-  document.getElementById('clockDisplay').textContent = new Date().toTimeString().split(' ')[0];
-}
-setInterval(updateClock, 1000); updateClock();
-
-// ─── SAMPLES ─────────────────────────────────────────────────────────────────
-function loadSampleFraud() {
-  document.getElementById('txInput').value =
-`A suspicious account application was submitted at 2:14 AM from an Android device (device_os: 3) using a Gmail address (email_is_free: 1). The applicant is renting (housing_status: 0), has no other bank cards (has_other_cards: 0), no valid home phone (phone_home_valid: 0), and the request originated from a foreign IP (foreign_request: 1). Credit risk score is 62 (very low). The session lasted less than 1 minute (keep_alive_session: 0). Proposed credit limit is ₹2,500. Income reported as 0.15.`;
-}
-function loadSampleLegit() {
-  document.getElementById('txInput').value =
-`Standard recurring subscription payment from a MacBook Pro (device_os: 1) using a corporate email (email_is_free: 0). The customer owns their home (housing_status: 3), has multiple bank cards (has_other_cards: 1), valid home phone on file (phone_home_valid: 1). Local request (foreign_request: 0), credit score 240, employed full time (employment_status: 1). Session was 12 minutes long. Income 0.8.`;
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('mob-open');
 }
 
-// ─── ANALYSIS ────────────────────────────────────────────────────────────────
+// ═══════════════ MODE ═══════════════
+const modeConfig = {
+  transaction: { label:'ANALYSE', placeholder:'Describe the transaction or paste JSON...', title:'TRANSACTION INTELLIGENCE', sub:'Real-time ML + rule-based fraud scoring engine' },
+  education:   { label:'LEARN',   placeholder:'Ask anything about fraud patterns, scams, or how attacks work...', title:'FRAUD EDUCATION', sub:'Expert knowledge on fraud typologies and attack patterns' },
+  prevention:  { label:'PREVENT', placeholder:'Describe your situation for specific prevention advice...', title:'PREVENTION ADVICE', sub:'Targeted fraud prevention recommendations' },
+  report:      { label:'REPORT',  placeholder:'Describe a transaction for a structured risk report...', title:'RISK REPORT', sub:'Structured forensic risk assessment' },
+};
+
+function setMode(m) {
+  curMode = m;
+  const cfg = modeConfig[m];
+  document.getElementById('modeLabel').textContent = 'MODE: ' + cfg.label;
+  document.getElementById('txInput').placeholder = cfg.placeholder;
+  document.getElementById('pgTitle').textContent = cfg.title;
+  document.getElementById('pgSub').textContent = cfg.sub;
+  document.querySelectorAll('[id^="sb-"]').forEach(b => b.classList.remove('active'));
+  document.getElementById('sb-' + m).classList.add('active');
+  showPage('analysis');
+}
+
+// ═══════════════ SAMPLES ═══════════════
+function loadFraud() {
+  document.getElementById('txInput').value = `A suspicious account application submitted at 2:14 AM from an Android device (device_os: 3) using a Gmail address (email_is_free: 1). Applicant is renting (housing_status: 0), no other bank cards (has_other_cards: 0), no valid home phone (phone_home_valid: 0), request from foreign IP (foreign_request: 1). Credit risk score 62. Session under 1 minute (keep_alive_session: 0). Proposed credit limit ₹2,500. Income 0.15.`;
+}
+function loadLegit() {
+  document.getElementById('txInput').value = `Standard recurring subscription payment from a MacBook Pro (device_os: 1) using corporate email (email_is_free: 0). Customer owns home (housing_status: 3), multiple bank cards (has_other_cards: 1), valid home phone (phone_home_valid: 1). Local request (foreign_request: 0), credit score 240, employed full time. Session 12 minutes. Income 0.8.`;
+}
+function clearInput() {
+  document.getElementById('txInput').value = '';
+  resetResults();
+}
+
+// ═══════════════ IMAGE ═══════════════
+function handleImage(e) {
+  const f = e.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    curImg = ev.target.result;
+    document.getElementById('previewImg').src = curImg;
+    const bar = document.getElementById('imgBar');
+    bar.style.display = 'flex';
+  };
+  r.readAsDataURL(f);
+}
+function removeImage() {
+  curImg = null;
+  document.getElementById('imgBar').style.display = 'none';
+  document.getElementById('imgInput').value = '';
+}
+
+// ═══════════════ ANALYSIS ═══════════════
 async function runAnalysis() {
   const input = document.getElementById('txInput').value.trim();
-  if (!input) return;
+  if (!input && !curImg) return;
 
   setLoading(true);
 
-  // Try to parse as JSON, otherwise send as text for LLM to extract
   let payload = {};
-  try {
-    payload = JSON.parse(input);
-  } catch(e) {
-    // Send as raw text description — backend LLM will handle it
-    // Fall back to calling /chat endpoint if text, or /analyze with empty payload
-    payload = { description: input };
-  }
+  try { payload = JSON.parse(input); } catch(e) { payload = { description: input }; }
 
   try {
     const res = await fetch('/analyze', {
@@ -673,442 +1287,389 @@ async function runAnalysis() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
-    if (!res.ok) throw new Error('Server error ' + res.status);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
-    lastResult = data;
-    renderAnalysisResult(data, input);
-    recordSession(input, data);
-    updateHeaderStats();
+    lastData = data;
+    renderResult(data, input);
+    recordToHistory(input, data);
+    updateHeader();
   } catch(err) {
-    showError('Analysis failed: ' + err.message);
+    showAnalysisError(err.message);
   } finally {
     setLoading(false);
   }
 }
 
 function setLoading(on) {
-  document.getElementById('analysisLoading').classList.toggle('hidden', !on);
-  document.getElementById('verdictCard').classList.add('hidden');
-  const btn = document.getElementById('analyseBtn');
-  btn.disabled = on;
-  document.getElementById('analyseBtnText').textContent = on ? 'Analysing...' : 'Run Analysis';
+  document.getElementById('loadingPanel').style.display = on ? 'block' : 'none';
+  document.getElementById('runBtn').disabled = on;
+  document.getElementById('runBtnTxt').textContent = on ? '⏳ ANALYSING...' : '▶ RUN ANALYSIS';
   if (on) {
-    document.getElementById('scoreDisplay').textContent = '—';
-    document.getElementById('scoreLevelDisplay').textContent = 'Processing...';
-    document.getElementById('gaugeCircle').style.strokeDashoffset = '264';
+    document.getElementById('verdictPanel').style.display = 'none';
+    document.getElementById('actionsPanel').style.display = 'none';
   }
 }
 
 function resetResults() {
-  document.getElementById('scoreDisplay').textContent = '—';
-  document.getElementById('scoreLevelDisplay').textContent = 'Awaiting Input';
-  document.getElementById('gaugeCircle').style.strokeDashoffset = '264';
-  document.getElementById('scoreBreakdown').classList.add('hidden');
-  document.getElementById('verdictCard').classList.add('hidden');
-  document.getElementById('actionsPanel').classList.add('hidden');
-  document.getElementById('riskBgGlow').className = 'absolute inset-0 bg-gradient-to-br from-transparent to-transparent transition-all duration-700 pointer-events-none';
-  document.getElementById('signalsList').innerHTML = `
-    <div class="flex items-center gap-3 p-4 bg-bg4/40 rounded-xl text-txt-dim text-sm italic">
-      <span class="material-symbols-outlined text-txt-muted">radar</span>No signals yet — run an analysis
-    </div>`;
-  document.getElementById('explanationContent').innerHTML = `<p class="text-txt-dim text-sm leading-relaxed italic">Run an analysis to see the forensic explanation here.</p>`;
+  document.getElementById('verdictPanel').style.display = 'none';
+  document.getElementById('actionsPanel').style.display = 'none';
+  document.getElementById('scoreBreakdown').style.display = 'none';
+  document.getElementById('resultCard').style.display = 'none';
+  document.getElementById('resultEmpty').style.display = 'block';
+  document.getElementById('gaugeScoreText').textContent = '—';
+  document.getElementById('gaugeLevelText').textContent = 'AWAITING';
+  document.getElementById('gaugeScoreText').setAttribute('fill', '#888');
+  document.getElementById('gaugeArc').style.strokeDashoffset = '364';
+  document.getElementById('gaugeArc').style.stroke = 'var(--orange)';
+  document.getElementById('signalsList').innerHTML = `<div class="signal-item"><div class="signal-bar" style="background:var(--txt3)"></div><div class="signal-text" style="color:var(--txt3);font-style:italic;">NO SIGNALS — RUN ANALYSIS</div></div>`;
+  document.getElementById('signalsBadge').textContent = 'NONE DETECTED';
+  document.getElementById('explanationBody').innerHTML = `<div class="explanation-text" style="color:var(--txt3);">Run an analysis to see the forensic breakdown here.</div>`;
+  document.getElementById('explBadge').textContent = 'AWAITING ANALYSIS';
 }
 
-function renderAnalysisResult(data, inputText) {
-  const score = data.hybrid_score ?? data.risk_score ?? 0;
-  const prob  = data.probability ?? 0;
-  const rl    = (data.risk_level || 'Low — Clear').split('—')[0].trim().toLowerCase();
+function renderResult(data, inputText) {
+  const score  = data.hybrid_score ?? data.risk_score ?? 0;
+  const prob   = data.probability ?? 0;
+  const rl     = (data.risk_level || 'Low — Clear').split('—')[0].trim().toLowerCase();
   const verdict = data.verdict || (score >= 60 ? 'FRAUD' : 'LEGITIMATE');
   const isFraud = verdict === 'FRAUD';
 
-  // Gauge
+  // GAUGE
   const pct = Math.min(score / 100, 1);
-  const circ = 264;
+  const circ = 364;
   const offset = circ - (circ * pct);
-  const gauge = document.getElementById('gaugeCircle');
-  gauge.style.strokeDashoffset = offset;
-  gauge.setAttribute('stroke', isFraud ? 'url(#riskGrad)' : 'url(#safeGrad)');
+  const arc = document.getElementById('gaugeArc');
+  arc.style.strokeDashoffset = offset;
+  arc.style.stroke = isFraud ? 'var(--red)' : rl === 'medium' ? 'var(--yellow)' : 'var(--green)';
+  const scoreTextEl = document.getElementById('gaugeScoreText');
+  scoreTextEl.textContent = score;
+  scoreTextEl.setAttribute('fill', isFraud ? '#ff3333' : rl === 'medium' ? '#ffcc00' : '#00cc44');
+  document.getElementById('gaugeLevelText').textContent = rl.toUpperCase();
 
-  // Score display
-  const scoreEl = document.getElementById('scoreDisplay');
-  scoreEl.textContent = score;
-  scoreEl.className = 'text-5xl font-black tracking-tighter ' + (isFraud ? 'text-red' : rl === 'medium' ? 'text-amber-lt' : 'text-green-400');
+  // SCORE BREAKDOWN
+  document.getElementById('scoreBreakdown').style.display = 'grid';
+  document.getElementById('sbML').textContent = prob + '%';
+  document.getElementById('sbML').style.color = isFraud ? 'var(--red)' : 'var(--green)';
+  document.getElementById('sbHybrid').textContent = score;
+  document.getElementById('sbHybrid').style.color = isFraud ? 'var(--red)' : 'var(--green)';
 
-  document.getElementById('scoreLevelDisplay').textContent = rl.charAt(0).toUpperCase() + rl.slice(1);
+  // SIDEBAR RESULT CARD
+  document.getElementById('resultCard').style.display = 'block';
+  document.getElementById('resultEmpty').style.display = 'none';
+  const rScoreEl = document.getElementById('rScore');
+  rScoreEl.textContent = score;
+  rScoreEl.className = 'result-score ' + rl;
+  document.getElementById('rHybrid').innerHTML = `ML: <b>${prob}%</b> · HYBRID: <b>${score}</b>`;
+  document.getElementById('rLabel').textContent = verdict + ' — ' + (data.risk_level || '');
+  const rBar = document.getElementById('rBar');
+  rBar.style.width = Math.min(score * 1.2, 100) + '%';
+  rBar.className = 'result-bar-fill ' + rl;
+  const rFlags = document.getElementById('rFlags'); rFlags.innerHTML = '';
+  [...(data.signals||[]), ...(data.flags||[])].slice(0,4).forEach(f => {
+    const d = document.createElement('div'); d.className = 'result-flag'; d.textContent = f;
+    rFlags.appendChild(d);
+  });
 
-  // Breakdown
-  document.getElementById('scoreBreakdown').classList.remove('hidden');
-  document.getElementById('mlProbDisplay').textContent = prob + '%';
-  document.getElementById('hybridDisplay').textContent = score;
+  // VERDICT
+  document.getElementById('verdictPanel').style.display = 'block';
+  document.getElementById('verdictBanner').innerHTML = `
+    <div class="verdict-banner ${isFraud ? 'fraud' : 'legit'}">
+      <div class="verdict-icon">${isFraud ? '⛔' : '✓'}</div>
+      <div>
+        <div class="verdict-text ${isFraud ? 'fraud' : 'legit'}">${verdict}</div>
+        <div class="verdict-sub">${data.risk_level || ''} · THRESHOLD ${data.threshold_used ?? 10}%</div>
+      </div>
+    </div>`;
 
-  // Background glow
-  const glowEl = document.getElementById('riskBgGlow');
-  glowEl.className = 'absolute inset-0 transition-all duration-700 pointer-events-none ' +
-    (isFraud ? 'bg-gradient-to-br from-red/5 to-transparent' : 'bg-gradient-to-br from-green-500/5 to-transparent');
-
-  // Verdict card
-  const vc = document.getElementById('verdictCard');
-  vc.classList.remove('hidden');
-  vc.className = 'p-5 rounded-2xl border flex items-center gap-4 animate-fadeup ' +
-    (isFraud ? 'bg-red/10 border-red/30' : 'bg-green-500/10 border-green-500/30');
-  document.getElementById('verdictIcon').textContent = isFraud ? 'gpp_bad' : 'verified_user';
-  document.getElementById('verdictIcon').className = 'material-symbols-outlined fill-icon text-4xl ' + (isFraud ? 'text-red' : 'text-green-400');
-  document.getElementById('verdictLabel').textContent = verdict;
-  document.getElementById('verdictLabel').className = 'text-xl font-black font-headline ' + (isFraud ? 'text-red' : 'text-green-400');
-  document.getElementById('verdictSub').textContent = data.risk_level || '';
-
-  // Signals
-  const allSigs = [...(data.signals || []), ...(data.flags || [])];
-  const sigHtml = allSigs.length > 0
+  // SIGNALS
+  const allSigs = [...(data.signals||[]), ...(data.flags||[])];
+  document.getElementById('signalsBadge').textContent = allSigs.length > 0 ? allSigs.length + ' DETECTED' : 'NONE DETECTED';
+  document.getElementById('signalsList').innerHTML = allSigs.length > 0
     ? allSigs.map(s => `
-        <div class="flex items-center justify-between p-4 bg-bg4/40 rounded-xl hover:bg-bg4 transition-colors animate-fadeup group">
-          <div class="flex items-center gap-3">
-            <div class="w-1 h-8 ${isFraud ? 'bg-red' : 'bg-amber-lt'} rounded-full flex-shrink-0"></div>
-            <div>
-              <p class="font-bold text-sm text-txt">${s}</p>
-            </div>
-          </div>
-          <span class="material-symbols-outlined ${isFraud ? 'text-red' : 'text-amber-lt'} fill-icon text-lg">
-            ${isFraud ? 'warning' : 'info'}
-          </span>
+        <div class="signal-item fade-in">
+          <div class="signal-bar" style="background:${isFraud ? 'var(--red)' : 'var(--green)'}"></div>
+          <div class="signal-text">${s}</div>
+          <div class="signal-icon">${isFraud ? '⚠' : 'ℹ'}</div>
         </div>`).join('')
-    : `<div class="flex items-center gap-3 p-4 bg-green-500/10 rounded-xl text-green-400 text-sm border border-green-500/20">
-        <span class="material-symbols-outlined fill-icon">check_circle</span> No risk signals detected
-      </div>`;
-  document.getElementById('signalsList').innerHTML = sigHtml;
+    : `<div class="signal-item"><div class="signal-bar" style="background:var(--green)"></div><div class="signal-text" style="color:var(--green);">✓ NO RISK SIGNALS DETECTED</div></div>`;
 
-  // Explanation
-  if (data.explanation) {
-    document.getElementById('explanationContent').innerHTML = `
-      <p class="text-txt leading-relaxed opacity-90 text-sm">${data.explanation}</p>
-      ${data.risk_level ? `<div class="p-4 bg-bg4/40 rounded-lg border-l-4 ${isFraud ? 'border-red' : 'border-amber-lt'}">
-        <p class="text-xs italic text-txt-dim">"Risk Level: ${data.risk_level} — Model threshold: ${data.threshold_used ?? 10}%"</p>
-      </div>` : ''}`;
+  // EXPLANATION
+  document.getElementById('explBadge').textContent = isFraud ? '⚠ FLAGGED' : '✓ CLEAR';
+  document.getElementById('explanationBody').innerHTML = data.explanation
+    ? `<div class="explanation-text">${data.explanation}</div>
+       <div class="explanation-quote">"Risk Level: ${data.risk_level || '—'} — Model threshold: ${data.threshold_used ?? 10}% — Hybrid scoring: ML×0.6 + Rules×0.4"</div>`
+    : `<div class="explanation-text" style="color:var(--txt3);">No explanation available.</div>`;
+
+  // ACTIONS
+  if (data.actions && data.actions.length) {
+    document.getElementById('actionsPanel').style.display = 'block';
+    const aColors = { block:'var(--red)', review:'var(--yellow)', monitor:'var(--cyan)', allow:'var(--green)', otp:'var(--orange)', default:'var(--txt2)' };
+    const aIcons  = { block:'⛔', review:'👁', monitor:'📊', allow:'✓', otp:'🔑', default:'▸' };
+    const aSubs   = { block:'IMMEDIATE ACTION', review:'HUMAN REVIEW NEEDED', monitor:'LOG FOR REVIEW', allow:'TRANSACTION CLEAR', otp:'VERIFY IDENTITY', default:'ACTION REQUIRED' };
+    function aKey(a) {
+      a = a.toLowerCase();
+      if(a.includes('block')) return 'block';
+      if(a.includes('review')||a.includes('manual')||a.includes('escalate')) return 'review';
+      if(a.includes('monitor')) return 'monitor';
+      if(a.includes('allow')) return 'allow';
+      if(a.includes('otp')||a.includes('verif')) return 'otp';
+      return 'default';
+    }
+    document.getElementById('actionsBody').innerHTML = data.actions.map((a, i) => `
+      <button class="action-btn-item ${data.actions.length===1 ? 'full' : ''}">
+        <div class="abi-icon">${aIcons[aKey(a)]}</div>
+        <div>
+          <div class="abi-text" style="color:${aColors[aKey(a)]}">${a}</div>
+          <div class="abi-sub">${aSubs[aKey(a)]}</div>
+        </div>
+      </button>`).join('');
   }
 
-  // Actions
-  if (data.actions && data.actions.length > 0) {
-    document.getElementById('actionsPanel').classList.remove('hidden');
-    const actionColors = {
-      block:   'border-red/40 text-red hover:bg-red/10',
-      review:  'border-amber-lt/40 text-amber-lt hover:bg-amber/10',
-      monitor: 'border-blue-400/40 text-blue-400 hover:bg-blue-400/10',
-      allow:   'border-green-400/40 text-green-400 hover:bg-green-400/10',
-      otp:     'border-amber/40 text-amber-lt hover:bg-amber/10',
-      notify:  'border-txt-dim/40 text-txt-dim hover:bg-bg4',
-    };
-    const actionIcons = {
-      block:'block', review:'rate_review', monitor:'visibility', allow:'check_circle', otp:'key', notify:'notifications'
-    };
-    const grid = data.actions.length === 1
-      ? `<button class="col-span-2 py-4 rounded-xl border font-bold font-label uppercase tracking-widest text-sm flex items-center justify-center gap-2 transition-all ${getActionStyle(data.actions[0], actionColors)}"><span class="material-symbols-outlined">${getActionIcon(data.actions[0], actionIcons)}</span>${data.actions[0]}</button>`
-      : data.actions.map((a, i) => `<button class="py-4 rounded-xl border font-bold font-label uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all ${getActionStyle(a, actionColors)}"><span class="material-symbols-outlined text-sm">${getActionIcon(a, actionIcons)}</span>${a}</button>`).join('');
-    document.getElementById('actionButtons').innerHTML = grid;
-  }
-
-  document.getElementById('analysisLoading').classList.add('hidden');
-
-  // Update signal frequency map
-  allSigs.forEach(s => { allSignals[s] = (allSignals[s] || 0) + 1; });
+  // Signal frequency
+  allSigs.forEach(s => { sigMap[s] = (sigMap[s]||0) + 1; });
 }
 
-function getActionStyle(a, map) {
-  a = a.toLowerCase();
-  if (a.includes('block')) return map.block;
-  if (a.includes('review') || a.includes('manual') || a.includes('escalate')) return map.review;
-  if (a.includes('monitor')) return map.monitor;
-  if (a.includes('allow')) return map.allow;
-  if (a.includes('otp') || a.includes('verif')) return map.otp;
-  return map.notify;
-}
-function getActionIcon(a, map) {
-  a = a.toLowerCase();
-  if (a.includes('block')) return map.block;
-  if (a.includes('review') || a.includes('manual') || a.includes('escalate')) return map.review;
-  if (a.includes('monitor')) return map.monitor;
-  if (a.includes('allow')) return map.allow;
-  if (a.includes('otp') || a.includes('verif')) return map.otp;
-  return map.notify;
+function showAnalysisError(msg) {
+  document.getElementById('explanationBody').innerHTML = `
+    <div style="padding:12px;background:var(--red-d);border:1px solid var(--red);font-size:11px;color:var(--red);">
+      ⚠ ANALYSIS ERROR: ${msg}
+    </div>`;
 }
 
-function showError(msg) {
-  document.getElementById('explanationContent').innerHTML =
-    `<div class="p-4 bg-red/10 border border-red/30 rounded-xl text-red text-sm">${msg}</div>`;
-}
-
-// ─── HISTORY ─────────────────────────────────────────────────────────────────
-function recordSession(input, data) {
-  const isFraud = (data.verdict || '') === 'FRAUD';
+// ═══════════════ HISTORY ═══════════════
+function recordToHistory(input, data) {
+  const isFraud = data.verdict === 'FRAUD';
   const score = data.hybrid_score ?? data.risk_score ?? 0;
-  const rl = (data.risk_level || 'Low — Clear').split('—')[0].trim().toLowerCase();
-
-  sessionHistory.unshift({
+  const rl = (data.risk_level||'Low — Clear').split('—')[0].trim().toLowerCase();
+  history.unshift({
     time: new Date().toTimeString().split(' ')[0],
-    desc: input.substring(0, 80) + (input.length > 80 ? '...' : ''),
+    desc: input.substring(0, 70) + (input.length > 70 ? '...' : ''),
     prob: data.probability ?? 0,
     hybrid: score,
     verdict: data.verdict || 'LEGITIMATE',
     riskLevel: data.risk_level || 'Low — Clear',
-    isFraud,
-    rl
+    isFraud, rl
   });
-
-  stats.analysed++;
-  stats.scores.push(score);
-  if (isFraud) stats.flagged++; else stats.cleared++;
-  const r = rl;
-  if (r === 'critical') stats.critical++;
-  else if (r === 'high') stats.high++;
-  else if (r === 'medium') stats.medium++;
+  stats.a++; stats.scores.push(score);
+  if(isFraud) stats.f++; else stats.c++;
+  if(rl==='critical') stats.crit++;
+  else if(rl==='high') stats.high++;
+  else if(rl==='medium') stats.med++;
   else stats.low++;
 }
 
-function renderHistory() {
-  const term = (document.getElementById('histSearch').value || '').toLowerCase();
-  const filtered = sessionHistory.filter(h => h.desc.toLowerCase().includes(term));
-  document.getElementById('historyCount').textContent = filtered.length + ' record' + (filtered.length !== 1 ? 's' : '');
-  const body = document.getElementById('historyTableBody');
-  if (!filtered.length) {
-    body.innerHTML = `<tr><td colspan="6" class="px-6 py-12 text-center text-txt-muted text-sm font-label italic">No records found.</td></tr>`;
-    return;
-  }
-  body.innerHTML = filtered.map((h, i) => `
-    <tr class="hover:bg-bg4 cursor-pointer transition-colors ${h.isFraud ? 'bg-red/3' : ''}" onclick="jumpToAnalysis(${i})">
-      <td class="px-6 py-4 text-xs font-mono text-txt-dim">${h.time}</td>
-      <td class="px-6 py-4 text-sm text-txt max-w-xs truncate">${h.desc}</td>
-      <td class="px-6 py-4">
-        <span class="font-black font-label text-sm ${h.isFraud ? 'text-red' : h.rl === 'medium' ? 'text-amber-lt' : 'text-green-400'}">${h.prob}%</span>
-      </td>
-      <td class="px-6 py-4">
-        <div class="flex items-center gap-2">
-          <div class="w-1 h-6 rounded-full ${h.isFraud ? 'bg-red' : h.rl === 'medium' ? 'bg-amber-lt' : 'bg-green-400'}"></div>
-          <span class="font-black font-label text-sm ${h.isFraud ? 'text-red' : h.rl === 'medium' ? 'text-amber-lt' : 'text-green-400'}">${h.hybrid}/100</span>
-        </div>
-      </td>
-      <td class="px-6 py-4">
-        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[0.6rem] font-bold uppercase tracking-wider font-label border
-          ${h.isFraud ? 'bg-red/10 text-red border-red/20' : 'bg-green-500/10 text-green-400 border-green-500/20'}">
-          <span class="material-symbols-outlined fill-icon text-xs">${h.isFraud ? 'gpp_bad' : 'verified_user'}</span>
-          ${h.verdict}
-        </span>
-      </td>
-      <td class="px-6 py-4 text-xs text-txt-muted font-label">${h.riskLevel}</td>
-    </tr>`).join('');
+function updateHeader() {
+  document.getElementById('hdrA').textContent = stats.a;
+  document.getElementById('hdrF').textContent = stats.f;
 }
 
-function filterHistory() { renderHistory(); }
+function renderHistory() {
+  const term = (document.getElementById('histSearch').value||'').toLowerCase();
+  const filtered = history.filter(h => h.desc.toLowerCase().includes(term));
+  document.getElementById('histCount').textContent = filtered.length + ' RECORDS';
+  document.getElementById('histFooter').textContent = 'SHOWING ' + filtered.length + ' OF ' + history.length + ' RECORDS';
+  const body = document.getElementById('histBody');
+  if (!filtered.length) {
+    body.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--txt3);font-style:italic;">NO RECORDS FOUND</td></tr>`;
+    return;
+  }
+  body.innerHTML = filtered.map((h,i) => {
+    const sc = h.rl==='critical'?'crit':h.rl==='high'?'high':h.rl==='medium'?'med':'low';
+    return `<tr class="${h.isFraud?'fraud-row':''} row-anim" style="animation-delay:${i*0.02}s" onclick="jumpAnalysis(${i})">
+      <td style="color:var(--txt3);white-space:nowrap;">${h.time}</td>
+      <td style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${h.desc}</td>
+      <td style="color:${h.isFraud?'var(--red)':h.rl==='medium'?'var(--yellow)':'var(--green)'};font-weight:700;">${h.prob}%</td>
+      <td style="color:${h.isFraud?'var(--red)':h.rl==='medium'?'var(--yellow)':'var(--green)'};font-weight:700;">${h.hybrid}</td>
+      <td><span class="badge ${h.isFraud?'fraud':'legit'}">${h.verdict}</span></td>
+      <td><span class="badge ${sc}">${h.riskLevel.split('—')[0].trim().toUpperCase()}</span></td>
+    </tr>`;
+  }).join('');
+}
 
-function jumpToAnalysis(i) {
+function jumpAnalysis(i) {
+  document.getElementById('txInput').value = history[i].desc;
   showPage('analysis');
-  document.getElementById('txInput').value = sessionHistory[i].desc;
 }
 
 function clearHistory() {
-  sessionHistory = [];
-  stats = { analysed:0, flagged:0, cleared:0, scores:[], critical:0, high:0, medium:0, low:0 };
-  allSignals = {};
-  updateHeaderStats();
+  history = [];
+  stats = { a:0, f:0, c:0, scores:[], crit:0, high:0, med:0, low:0 };
+  sigMap = {};
+  updateHeader();
   renderHistory();
 }
 
 function exportHistory() {
-  if (!sessionHistory.length) return;
-  const csv = ['time,description,ml_prob,hybrid_score,verdict,risk_level',
-    ...sessionHistory.map(h => `"${h.time}","${h.desc.replace(/"/g,"'")}",${h.prob},${h.hybrid},${h.verdict},"${h.riskLevel}"`)
+  if (!history.length) return;
+  const csv = ['time,description,ml_prob,hybrid,verdict,risk_level',
+    ...history.map(h => `"${h.time}","${h.desc.replace(/"/g,"'")}",${h.prob},${h.hybrid},${h.verdict},"${h.riskLevel}"`)
   ].join('\n');
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
-  a.download = 'fraudguard-history-' + Date.now() + '.csv'; a.click();
+  download(csv, 'fraudguard-history-' + Date.now() + '.csv', 'text/csv');
 }
 
-// ─── HEADER STATS ────────────────────────────────────────────────────────────
-function updateHeaderStats() {
-  document.getElementById('hdrAnalysed').textContent = stats.analysed;
-  document.getElementById('hdrFlagged').textContent = stats.flagged;
-}
+function exportSession() { exportHistory(); }
 
-// ─── REPORTS ─────────────────────────────────────────────────────────────────
+// ═══════════════ REPORTS ═══════════════
 function renderReports() {
-  document.getElementById('rptTotal').textContent   = stats.analysed;
-  document.getElementById('rptFlagged').textContent = stats.flagged;
-  document.getElementById('rptCleared').textContent = stats.cleared;
-  const avg = stats.scores.length ? Math.round(stats.scores.reduce((a,b)=>a+b,0)/stats.scores.length) : 0;
-  document.getElementById('rptAvgScore').textContent = stats.scores.length ? avg : '—';
-
-  const t = Math.max(stats.analysed, 1);
-  document.getElementById('rptFlaggedPct').textContent = Math.round(stats.flagged/t*100) + '% of total';
+  document.getElementById('rptTotal').textContent = stats.a;
+  document.getElementById('rptFlagged').textContent = stats.f;
+  document.getElementById('rptCleared').textContent = stats.c;
+  const avg = stats.scores.length ? Math.round(stats.scores.reduce((a,b)=>a+b)/stats.scores.length) : 0;
+  document.getElementById('rptAvg').textContent = stats.scores.length ? avg : '—';
+  const t = Math.max(stats.a,1);
+  document.getElementById('rptFlaggedPct').textContent = Math.round(stats.f/t*100) + '% OF TOTAL';
   document.getElementById('rptTotalBar').style.width = '100%';
-  document.getElementById('rptFlaggedBar').style.width = Math.round(stats.flagged/t*100) + '%';
+  document.getElementById('rptFlaggedBar').style.width = Math.round(stats.f/t*100) + '%';
   document.getElementById('rptAvgBar').style.width = avg + '%';
-  document.getElementById('rptClearedBar').style.width = Math.round(stats.cleared/t*100) + '%';
+  document.getElementById('rptClearedBar').style.width = Math.round(stats.c/t*100) + '%';
 
-  // Risk bars
-  const mx = Math.max(stats.critical, stats.high, stats.medium, stats.low, 1);
-  document.getElementById('barCritical').style.width = Math.round(stats.critical/mx*100) + '%';
-  document.getElementById('barHigh').style.width = Math.round(stats.high/mx*100) + '%';
-  document.getElementById('barMedium').style.width = Math.round(stats.medium/mx*100) + '%';
-  document.getElementById('barLow').style.width = Math.round(stats.low/mx*100) + '%';
-  document.getElementById('cntCritical').textContent = stats.critical;
-  document.getElementById('cntHigh').textContent = stats.high;
-  document.getElementById('cntMedium').textContent = stats.medium;
-  document.getElementById('cntLow').textContent = stats.low;
+  const mx = Math.max(stats.crit, stats.high, stats.med, stats.low, 1);
+  document.getElementById('dCritical').style.width = Math.round(stats.crit/mx*100) + '%';
+  document.getElementById('dHigh').style.width = Math.round(stats.high/mx*100) + '%';
+  document.getElementById('dMedium').style.width = Math.round(stats.med/mx*100) + '%';
+  document.getElementById('dLow').style.width = Math.round(stats.low/mx*100) + '%';
+  document.getElementById('dcCritical').textContent = stats.crit;
+  document.getElementById('dcHigh').textContent = stats.high;
+  document.getElementById('dcMedium').textContent = stats.med;
+  document.getElementById('dcLow').textContent = stats.low;
 
-  // Top signals
-  const sorted = Object.entries(allSignals).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const sorted = Object.entries(sigMap).sort((a,b)=>b[1]-a[1]).slice(0,8);
   const maxS = sorted.length ? sorted[0][1] : 1;
-  document.getElementById('topSignalsList').innerHTML = sorted.length
-    ? sorted.map(([s, c]) => `
-        <div class="flex items-center gap-3">
-          <div class="flex-1">
-            <div class="flex justify-between mb-1 text-xs"><span class="text-txt font-bold">${s}</span><span class="text-amber-lt font-mono">${c}x</span></div>
-            <div class="h-1.5 w-full bg-bg5 rounded-full overflow-hidden">
-              <div class="h-full bg-amber rounded-full transition-all duration-700" style="width:${Math.round(c/maxS*100)}%"></div>
-            </div>
-          </div>
+  document.getElementById('topSignals').innerHTML = sorted.length
+    ? sorted.map(([s,c]) => `
+        <div class="sf-row">
+          <div><div class="sf-name">${s}</div><div class="sf-bar"><div class="sf-bar-fill" style="width:${Math.round(c/maxS*100)}%"></div></div></div>
+          <div class="sf-count">${c}×</div>
         </div>`).join('')
-    : '<p class="text-txt-muted text-sm italic font-label">No signals recorded yet.</p>';
+    : `<div style="color:var(--txt3);font-size:10px;font-style:italic;">NO SIGNALS RECORDED YET</div>`;
 }
 
-function exportReportJSON() {
-  const report = { generated: new Date().toISOString(), stats, history: sessionHistory, topSignals: allSignals };
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([JSON.stringify(report, null, 2)], {type:'application/json'}));
-  a.download = 'fraudguard-report-' + Date.now() + '.json'; a.click();
+function exportReport() {
+  const r = { generated: new Date().toISOString(), stats, history, topSignals: sigMap };
+  download(JSON.stringify(r, null, 2), 'fraudguard-report-' + Date.now() + '.json', 'application/json');
 }
 
-// ─── BATCH ───────────────────────────────────────────────────────────────────
-let manualQueue = [];
+// ═══════════════ BATCH ═══════════════
+let manualQueue = [], csvQueue = [];
 
-function addManualToBatch() {
-  const txn = {
-    id: `txn_${String(manualQueue.length + 1).padStart(3,'0')}`,
-    amount:         parseFloat(document.getElementById('mAmount').value) || undefined,
-    hour:           parseInt(document.getElementById('mHour').value) || undefined,
-    foreign_request:parseInt(document.getElementById('mForeign').value),
-    email_is_free:  parseInt(document.getElementById('mEmail').value),
-    device_os:      parseInt(document.getElementById('mDevice').value),
-    credit_risk_score: parseInt(document.getElementById('mCredit').value) || undefined,
-  };
-  Object.keys(txn).forEach(k => txn[k] === undefined && delete txn[k]);
+function bAddManual() {
+  const txn = { id: `txn_${String(manualQueue.length+1).padStart(3,'0')}` };
+  const amt = parseFloat(document.getElementById('bAmount').value);
+  const hr  = parseInt(document.getElementById('bHour').value);
+  const cr  = parseInt(document.getElementById('bCredit').value);
+  if (!isNaN(amt)) txn.amount = amt;
+  if (!isNaN(hr))  txn.hour   = hr;
+  if (!isNaN(cr))  txn.credit_risk_score = cr;
+  txn.foreign_request = parseInt(document.getElementById('bForeign').value);
+  txn.email_is_free   = parseInt(document.getElementById('bEmail').value);
+  txn.device_os       = parseInt(document.getElementById('bDevice').value);
   manualQueue.push(txn);
-  document.getElementById('manualQueueInfo').textContent = `Queue: ${manualQueue.length} transaction${manualQueue.length !== 1 ? 's' : ''}`;
-  document.getElementById('runBatchBtn').disabled = false;
+  updateBatchBtnState();
 }
 
-function handleBatchFile(e) {
-  const f = e.target.files[0]; if (!f) return;
-  parseBatchCSV(f);
-}
-function handleBatchDrop(e) {
-  e.preventDefault();
-  const f = e.dataTransfer.files[0]; if (!f) return;
-  parseBatchCSV(f);
-}
+function bLoadCSV(e) { parseCSV(e.target.files[0]); }
+function bDropFile(e) { e.preventDefault(); document.getElementById('dropZone').classList.remove('drag'); parseCSV(e.dataTransfer.files[0]); }
 
-function parseBatchCSV(file) {
-  const reader = new FileReader();
-  reader.onload = e => {
+function parseCSV(file) {
+  if (!file) return;
+  const r = new FileReader();
+  r.onload = e => {
     const lines = e.target.result.trim().split('\n').filter(Boolean);
     if (lines.length < 2) return;
-    const headers = lines[0].split(',').map(h => h.trim());
-    batchQueue = lines.slice(1).map((line, i) => {
-      const vals = line.split(',').map(v => v.trim());
+    const headers = lines[0].split(',').map(h=>h.trim());
+    csvQueue = lines.slice(1).map((line,i) => {
+      const vals = line.split(',').map(v=>v.trim());
       const row = {};
-      headers.forEach((h, j) => {
-        const v = vals[j] || '';
-        if (h === 'id') { row.id = v || `row_${i+1}`; return; }
-        if (['device_changed','location_changed'].includes(h)) { row[h] = v.toLowerCase() === 'true'; return; }
-        const n = parseFloat(v);
-        if (!isNaN(n)) row[h] = n;
+      headers.forEach((h,j) => {
+        const v = vals[j]||'';
+        if (h==='id') { row.id=v||`row_${i+1}`; return; }
+        if (['device_changed','location_changed'].includes(h)) { row[h]=v.toLowerCase()==='true'; return; }
+        const n=parseFloat(v); if(!isNaN(n)) row[h]=n;
       });
-      if (!row.id) row.id = `row_${i+1}`;
+      if(!row.id) row.id=`row_${i+1}`;
       return row;
     });
-    document.getElementById('runBatchBtn').disabled = false;
-    document.getElementById('manualQueueInfo').textContent = `CSV: ${batchQueue.length} rows loaded from ${file.name}`;
+    const el = document.getElementById('bCsvStatus');
+    el.style.display = 'block';
+    document.getElementById('bCsvInfo').textContent = csvQueue.length + ' ROWS FROM ' + file.name;
+    updateBatchBtnState();
   };
-  reader.readAsText(file);
+  r.readAsText(file);
+}
+
+function updateBatchBtnState() {
+  const n = manualQueue.length + csvQueue.length;
+  document.getElementById('bQueueCount').textContent = 'QUEUE: ' + n;
+  document.getElementById('runBatchBtn').disabled = n === 0;
 }
 
 async function runBatch() {
-  const allTxns = [...manualQueue, ...batchQueue];
-  if (!allTxns.length) return;
+  const all = [...manualQueue, ...csvQueue];
+  if (!all.length) return;
 
   const btn = document.getElementById('runBatchBtn');
-  btn.disabled = true;
-  document.getElementById('runBatchBtnText').textContent = 'Processing...';
+  btn.disabled = true; btn.textContent = '⏳ PROCESSING...';
 
-  // Show progress card
-  const prog = document.getElementById('batchProgressCard');
-  prog.classList.remove('hidden');
-  document.getElementById('batchFileName').textContent = 'Batch Job ' + new Date().toTimeString().split(' ')[0];
-  document.getElementById('batchFileInfo').textContent = allTxns.length + ' transactions · Scoring now';
-  document.getElementById('batchProgressBar').style.width = '15%';
-  document.getElementById('batchPct').textContent = '15%';
+  const pc = document.getElementById('batchProgressCard');
+  pc.style.display = 'block';
+  document.getElementById('batchJobName').textContent = 'BATCH-' + new Date().toTimeString().split(' ')[0].replace(/:/g,'');
+  document.getElementById('batchJobInfo').textContent = all.length + ' TRANSACTIONS';
+  setProgress(20, 'INITIALISING...');
 
   try {
-    document.getElementById('batchProgressBar').style.width = '45%';
-    document.getElementById('batchPct').textContent = '45%';
-
+    setProgress(45, 'SCORING TRANSACTIONS...');
     const res = await fetch('/analyze/batch', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ transactions: allTxns })
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ transactions: all })
     });
-    document.getElementById('batchProgressBar').style.width = '85%';
-    document.getElementById('batchPct').textContent = '85%';
-
+    setProgress(85, 'PROCESSING RESULTS...');
     const data = await res.json();
-    document.getElementById('batchProgressBar').style.width = '100%';
-    document.getElementById('batchPct').textContent = '100%';
+    setProgress(100, 'COMPLETE');
+
+    const s = data.summary||{};
+    const flagged = s.flagged || (data.results||[]).filter(r=>r.verdict==='FRAUD').length;
+    document.getElementById('bsTotal').textContent   = s.total || all.length;
+    document.getElementById('bsFlagged').textContent = flagged;
+    document.getElementById('bsFlaggedPct').textContent = Math.round(flagged/(s.total||1)*100) + '% OF TOTAL';
+    document.getElementById('bsCleared').textContent  = (s.total||all.length) - flagged;
+    document.getElementById('bScanned').textContent   = (s.total||all.length) + ' SCANNED';
+    document.getElementById('bFlaggedLive').textContent = flagged + ' FLAGGED';
 
     batchResults = data.results || [];
-    const s = data.summary || {};
-
-    // Update summary cards
-    document.getElementById('batchTotal').textContent = s.total || allTxns.length;
-    const flagged = s.flagged || batchResults.filter(r => r.verdict === 'FRAUD').length;
-    document.getElementById('batchFlagged').textContent = flagged;
-    document.getElementById('batchFlaggedPct').textContent = '+' + Math.round(flagged/(s.total||1)*100) + '%';
-    document.getElementById('batchCleared').textContent = (s.total || allTxns.length) - flagged;
-
-    document.getElementById('batchScanned').textContent = (s.total || allTxns.length) + ' Scanned';
-    document.getElementById('batchFlaggedLive').textContent = flagged + ' Flagged';
-
+    document.getElementById('bResultsBadge').textContent = batchResults.length + ' RESULTS';
     renderBatchResults(batchResults);
-    setTimeout(() => prog.classList.add('hidden'), 1500);
+    setTimeout(() => { pc.style.display='none'; }, 1500);
 
   } catch(err) {
-    document.getElementById('batchProgressBar').style.width = '0%';
-    document.getElementById('batchFileInfo').textContent = 'Error: ' + err.message;
+    setProgress(0, 'ERROR: ' + err.message);
   }
+  btn.disabled = false; btn.textContent = '▶ RUN BATCH ANALYSIS';
+  manualQueue = []; csvQueue = [];
+  updateBatchBtnState();
+}
 
-  btn.disabled = false;
-  document.getElementById('runBatchBtnText').textContent = 'Run Batch Analysis';
-  manualQueue = [];
-  batchQueue = [];
-  document.getElementById('manualQueueInfo').textContent = 'Queue: 0 transactions';
+function setProgress(pct, label) {
+  document.getElementById('bProgressBar').style.width = pct + '%';
+  document.getElementById('bProgressPct').textContent = pct + '%';
+  document.getElementById('bProgressLabel').textContent = label;
 }
 
 function renderBatchResults(results) {
-  const body = document.getElementById('batchResultsBody');
-  if (!results.length) {
-    body.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-txt-muted text-sm italic font-label">No results.</td></tr>`;
-    return;
-  }
-  body.innerHTML = results.map((r, i) => {
-    const isFraud = r.verdict === 'FRAUD';
-    const score = r.hybrid_score ?? r.risk_score ?? 0;
-    const rl = (r.risk_level || 'Low — Clear').split('—')[0].trim();
-    const rlClass = rl.toLowerCase() === 'critical' ? 'text-red' : rl.toLowerCase() === 'high' ? 'text-amber-lt' : rl.toLowerCase() === 'medium' ? 'text-blue-400' : 'text-green-400';
-    const acts = (r.actions || []).slice(0,2).map(a => `<span class="px-2 py-0.5 rounded border text-[10px] font-bold font-label uppercase ${isFraud ? 'border-red/30 text-red' : 'border-green-500/30 text-green-400'}">${a}</span>`).join('');
-    return `<tr class="hover:bg-bg4 transition-colors ${isFraud ? 'bg-red/3' : ''}" style="animation:fadeUp 0.2s ease ${i*0.02}s both">
-      <td class="p-4 font-mono text-xs text-txt-muted">${r.id || '—'}</td>
-      <td class="p-4"><span class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold font-label uppercase border ${isFraud ? 'bg-red/10 text-red border-red/20' : 'bg-green-500/10 text-green-400 border-green-500/20'}">${r.verdict}</span></td>
-      <td class="p-4 font-black font-label text-sm ${isFraud ? 'text-red' : 'text-green-400'}">${r.probability ?? 0}%</td>
-      <td class="p-4 font-black font-label text-sm ${isFraud ? 'text-red' : 'text-green-400'}">${score}</td>
-      <td class="p-4"><span class="text-xs font-bold font-label ${rlClass}">${rl}</span></td>
-      <td class="p-4"><div class="flex flex-wrap gap-1">${acts}</div></td>
+  const body = document.getElementById('bResultsBody');
+  if (!results.length) { body.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:16px;color:var(--txt3);">NO RESULTS</td></tr>'; return; }
+  body.innerHTML = results.map((r,i) => {
+    const isFraud = r.verdict==='FRAUD';
+    const score = r.hybrid_score??r.risk_score??0;
+    const rl = (r.risk_level||'Low — Clear').split('—')[0].trim();
+    const sc = rl.toLowerCase()==='critical'?'crit':rl.toLowerCase()==='high'?'high':rl.toLowerCase()==='medium'?'med':'low';
+    const acts = (r.actions||[]).slice(0,2).map(a=>`<span style="font-size:9px;padding:1px 6px;border:1px solid ${isFraud?'rgba(255,51,51,0.4)':'rgba(0,204,68,0.4)'};color:${isFraud?'var(--red)':'var(--green)'};">${a.toUpperCase()}</span>`).join(' ');
+    return `<tr class="${isFraud?'fraud-row':''} row-anim" style="animation-delay:${i*0.015}s">
+      <td style="color:var(--txt3);font-size:10px;">${r.id||'—'}</td>
+      <td><span class="badge ${isFraud?'fraud':'legit'}">${r.verdict}</span></td>
+      <td style="color:${isFraud?'var(--red)':'var(--green)'};font-weight:700;">${r.probability??0}%</td>
+      <td style="color:${isFraud?'var(--red)':'var(--green)'};font-weight:700;">${score}</td>
+      <td><span class="badge ${sc}">${rl.toUpperCase()}</span></td>
+      <td>${acts}</td>
     </tr>`;
   }).join('');
 }
@@ -1116,15 +1677,17 @@ function renderBatchResults(results) {
 function batchExportCSV() {
   if (!batchResults.length) return;
   const csv = ['id,verdict,probability,hybrid_score,risk_level,actions,explanation',
-    ...batchResults.map(r => `"${r.id}",${r.verdict},${r.probability},${r.hybrid_score||r.risk_score},"${r.risk_level}","${(r.actions||[]).join('; ')}","${(r.explanation||'').replace(/"/g,"'")}"`)
+    ...batchResults.map(r=>`"${r.id}",${r.verdict},${r.probability},${r.hybrid_score??r.risk_score},"${r.risk_level}","${(r.actions||[]).join('; ')}","${(r.explanation||'').replace(/"/g,"'")}"`),
   ].join('\n');
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
-  a.download = 'fraudguard-batch-' + Date.now() + '.csv'; a.click();
+  download(csv, 'fraudguard-batch-' + Date.now() + '.csv', 'text/csv');
 }
 
-// ─── INIT ─────────────────────────────────────────────────────────────────────
-showPage('analysis');
+// ═══════════════ UTIL ═══════════════
+function download(content, filename, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], {type}));
+  a.download = filename; a.click();
+}
 </script>
 </body>
 </html>
